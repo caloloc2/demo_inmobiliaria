@@ -2,6 +2,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import '../style.css';
 import './app.css';
 import * as maplibregl from 'maplibre-gl';
+import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { DEFAULT_LOCATION, watchGps, type Fix, type GpsStatus } from './gps';
 import { SimulatedPropertyProvider } from '../properties/generator';
 import { distanceM, formatDistance } from '../properties/geo';
@@ -9,6 +10,7 @@ import { TYPE_COLOR, TYPE_EMOJI, TYPE_LABEL, formatPrice, placeholderImage } fro
 import type { LatLng, Property, PropertyType } from '../properties/types';
 
 const SEARCH_RADIUS_M = 2500;
+maplibregl.setWorkerUrl(workerUrl);
 const provider = new SimulatedPropertyProvider();
 
 const map = new maplibregl.Map({
