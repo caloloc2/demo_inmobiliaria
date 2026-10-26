@@ -3,7 +3,7 @@ import type { LatLng, Property, PropertyProvider, PropertyType } from './types';
 
 /** Tamaño de celda en grados (~1.1 km). Cada celda tiene siempre los mismos inmuebles. */
 const CELL = 0.01;
-const PER_CELL = 2;
+const PER_CELL = 3;
 
 // PRNG determinista (mulberry32) para que el demo sea estable entre recargas.
 function mulberry32(seed: number) {
@@ -20,6 +20,7 @@ const hashCell = (ix: number, iy: number) => (Math.imul(ix, 73856093) ^ Math.imu
 
 const STREETS = ['Av. Los Álamos', 'Calle del Sol', 'Av. Principal', 'Calle Las Palmas', 'Av. Los Pinos', 'Calle Bolívar', 'Vía Panorámica', 'Calle de los Cedros'];
 const NEIGHBORHOODS = ['Los Pinos', 'La Colina', 'El Mirador', 'Valle Verde', 'San Miguel', 'Altos del Río'];
+const CONDITIONS = ['Nuevo', 'Buen estado', 'Excelente estado', 'Para remodelar'] as const;
 const ADJ = ['Moderna', 'Amplia', 'Acogedora', 'Con vista', 'Remodelada', 'Esquinera'];
 
 const pick = <T>(rnd: () => number, arr: readonly T[]): T => arr[Math.floor(rnd() * arr.length)];
@@ -57,7 +58,7 @@ function build(rnd: () => number, id: string, center: LatLng): Property {
     description = `Finca de ${(areaM2 / 10000).toFixed(1)} hectáreas con casa principal, agua propia y acceso lastrado. Ideal para vivienda campestre o proyecto productivo.`;
   }
 
-  return { id, type, title, price, areaM2, bedrooms, bathrooms, address: `${street} N${number}, ${neighborhood}`, description, ...center };
+  return { id, type, title, price, areaM2, bedrooms, bathrooms, address: `${street} N${number}, ${neighborhood}`, condition: pick(rnd, CONDITIONS), description, ...center };
 }
 
 export class SimulatedPropertyProvider implements PropertyProvider {

@@ -39,7 +39,7 @@ export class Simulator {
     const total = this.route.cum[this.route.cum.length - 1];
     this.traveled = Math.min(total, this.traveled + (this.speed * TICK_MS) / 1000);
     const { pos, heading } = pointAt(this.route.coords, this.route.cum, this.traveled);
-    this.onFix({ ...pos, heading, accuracy: 5 });
+    this.onFix({ ...pos, heading, accuracy: 5, speed: this.speed });
     if (this.traveled >= total) {
       this.stop();
       this.onDone();

@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#0f172a" />
+  <meta name="theme-color" content="#f4f1ec" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
   <link rel="icon" href="/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <title>Inmuebles en Ruta</title>
@@ -11,16 +12,27 @@
 <body>
   <div id="map"></div>
   <div id="gps-banner" class="hidden"></div>
-  <div class="topbar">
-    <div id="count">Buscando inmuebles…</div>
-    <div class="chips">
-      <button class="chip" data-type="casa" style="--c:#22c55e">🏠 Casas</button>
-      <button class="chip" data-type="edificio" style="--c:#3b82f6">🏢 Edificios</button>
-      <button class="chip" data-type="finca" style="--c:#f59e0b">🌳 Fincas</button>
+
+  <header class="hud" id="hud">
+    <label class="search">
+      <span class="search-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span>
+      <input id="q" type="search" placeholder="Buscar casa, calle o precio…" autocomplete="off" enterkeyhint="search" />
+    </label>
+    <div id="results" class="results hidden"></div>
+    <div class="counters">
+      <div class="chips" id="chips"></div>
+      <div class="total"><div id="total">0</div><span class="pill sun">Total</span></div>
     </div>
+  </header>
+
+  <div class="mapctl" id="mapctl">
+    <button id="recenter" class="hidden" aria-label="Centrar en mi ubicación"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 21 3l-8 18-2-8z"/></svg></button>
+    <button id="zin" aria-label="Acercar">+</button>
+    <button id="zout" aria-label="Alejar">−</button>
   </div>
-  <button id="recenter" class="hidden" aria-label="Centrar en mi ubicación">◎</button>
+
   <div id="navbar" class="hidden"></div>
+  <div id="speed" class="hidden"><b>0</b><small>km/h</small></div>
   <div id="routepanel" class="hidden"></div>
   <aside id="sheet" aria-live="polite"></aside>
   <script type="module" src="/src/app/main.ts"></script>

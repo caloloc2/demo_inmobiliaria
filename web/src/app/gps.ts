@@ -3,6 +3,8 @@ import type { LatLng } from '../properties/types';
 export interface Fix extends LatLng {
   heading: number | null;
   accuracy: number;
+  /** Velocidad en m/s, si el dispositivo la entrega. */
+  speed: number | null;
 }
 
 /** Quito: ubicación por defecto si el GPS no está disponible o fue denegado. */
@@ -24,6 +26,7 @@ export function watchGps(onFix: (f: Fix) => void, onStatus: (s: GpsStatus) => vo
         lng: pos.coords.longitude,
         heading: pos.coords.heading != null && !Number.isNaN(pos.coords.heading) ? pos.coords.heading : null,
         accuracy: pos.coords.accuracy,
+        speed: pos.coords.speed != null && !Number.isNaN(pos.coords.speed) ? pos.coords.speed : null,
       });
     },
     (err) => onStatus(err.code === err.PERMISSION_DENIED ? 'denied' : 'unavailable'),

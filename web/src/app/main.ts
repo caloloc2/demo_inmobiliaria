@@ -4,37 +4,57 @@ import './app.css';
 import * as maplibregl from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { DEFAULT_LOCATION, watchGps, type Fix, type GpsStatus } from './gps';
+import { createNavigation } from './navigation';
 import { SimulatedPropertyProvider } from '../properties/generator';
 import { distanceM, formatDistance } from '../properties/geo';
-import { TYPE_COLOR, TYPE_EMOJI, TYPE_LABEL, formatPrice, placeholderImage } from '../properties/format';
+import { TYPE_COLOR, TYPE_LABEL, TYPE_PLURAL, formatPrice, illustration, typeIcon } from '../properties/format';
 import type { LatLng, Property, PropertyType } from '../properties/types';
-import { createNavigation } from './navigation';
 
-const SEARCH_RADIUS_M = 2500;
+const SEARCH_RADIUS_M = 2000;
+const TYPES: PropertyType[] = ['casa', 'edificio', 'finca'];
+
 maplibregl.setWorkerUrl(workerUrl);
 const provider = new SimulatedPropertyProvider();
 
 const map = new maplibregl.Map({
   container: 'map',
-  style: 'https://tiles.openfreemap.org/styles/liberty',
+  style: 'https://tiles.openfreemap.org/styles/positron',
   center: [DEFAULT_LOCATION.lng, DEFAULT_LOCATION.lat],
   zoom: 14.5,
   attributionControl: { compact: true },
 });
-map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
+
+/** Paleta cálida y suave del diseño (el estilo base es gris frío). */
+function tuneStyle() {
+  const paint = (id: string, prop: string, value: string) => {
+    if (map.getLayer(id)) map.setPaintProperty(id, prop as 'background-color', value);
+  };
+  paint('background', 'background-color', '#ece8e0');
+  paint('park', 'fill-color', '#dde7d0');
+  paint('landcover_wood', 'fill-color', '#d6e3c6');
+  paint('water', 'fill-color', '#cfe3ef');
+  paint('building', 'fill-color', '#e1dcd1');
+  paint('landuse_residential', 'fill-color', '#e8e3da');
+  for (const id of ['highway_minor', 'highway_major_inner', 'highway_motorway_inner']) paint(id, 'line-color', '#ffffff');
+}
+map.on('load', tuneStyle);
 
 // --- Estado ---
 let user: Fix | null = null;
 let follow = true;
 let genCenter: LatLng | null = null;
-let activeTypes = new Set<PropertyType>(['casa', 'edificio', 'finca']);
+const activeTypes = new Set<PropertyType>(TYPES);
 const markers = new Map<string, { marker: maplibregl.Marker; property: Property }>();
 
 // --- UI ---
-const gpsBanner = document.getElementById('gps-banner')!;
-const sheet = document.getElementById('sheet')!;
-const recenterBtn = document.getElementById('recenter')!;
-const countEl = document.getElementById('count')!;
+const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+const gpsBanner = $('gps-banner');
+const sheet = $('sheet');
+const recenterBtn = $('recenter');
+const totalEl = $('total');
+const chipsEl = $('chips');
+const searchInput = $<HTMLInputElement>('q');
+const resultsEl = $('results');
 
 function setGpsStatus(s: GpsStatus) {
   gpsBanner.classList.toggle('hidden', s === 'ok');
@@ -46,22 +66,29 @@ function setGpsStatus(s: GpsStatus) {
         : '';
 }
 
-// Marcador del usuario (punto azul con flecha de rumbo).
+// Marcador del usuario: halo celeste con flecha de rumbo.
 const userEl = document.createElement('div');
-userEl.className = 'user-dot';
-userEl.innerHTML = '<div class="user-arrow"></div>';
+userEl.className = 'user';
+userEl.innerHTML = '<div class="user-halo"></div><div class="user-core"><svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M12 3 5 20l7-4 7 4z"/></svg></div><div class="user-tag">Tú</div>';
 const userMarker = new maplibregl.Marker({ element: userEl, rotationAlignment: 'map' });
+const userArrow = userEl.querySelector<HTMLElement>('.user-core')!;
 
 function onFix(f: Fix) {
   user = f;
   userMarker.setLngLat([f.lng, f.lat]);
-  if (!userMarker.getElement().isConnected) userMarker.addTo(map);
-  if (f.heading != null) userMarker.setRotation(f.heading);
+  if (!userEl.isConnected) userMarker.addTo(map);
+  if (f.heading != null) userArrow.style.transform = `rotate(${f.heading - map.getBearing()}deg)`;
   refreshProperties(f);
+  updateNearest();
   if (nav.navigating) nav.feed(f);
   else if (follow && !nav.active) map.easeTo({ center: [f.lng, f.lat], duration: 600 });
   if (sheetProperty) renderSheet(sheetProperty);
 }
+
+// Mantener la flecha apuntando al rumbo real aunque rote la cámara.
+map.on('rotate', () => {
+  if (user?.heading != null) userArrow.style.transform = `rotate(${user.heading - map.getBearing()}deg)`;
+});
 
 const nav = createNavigation({
   map,
@@ -77,6 +104,7 @@ const nav = createNavigation({
   onSimFix: (f) => onFix(f),
 });
 
+// --- Inmuebles en el mapa ---
 function refreshProperties(center: LatLng) {
   // Solo regenerar cuando nos alejamos lo suficiente del último centro.
   if (genCenter && distanceM(genCenter, center) < SEARCH_RADIUS_M / 4) return;
@@ -97,7 +125,7 @@ function makeMarker(p: Property): maplibregl.Marker {
   el.className = 'pin';
   el.style.setProperty('--c', TYPE_COLOR[p.type]);
   el.setAttribute('aria-label', `${TYPE_LABEL[p.type]} en venta ${formatPrice(p.price)}`);
-  el.textContent = TYPE_EMOJI[p.type];
+  el.innerHTML = `${typeIcon(p.type, 22)}<span class="pin-tag">Más cercano</span>`;
   el.addEventListener('click', (e) => {
     e.stopPropagation();
     openSheet(p);
@@ -106,24 +134,78 @@ function makeMarker(p: Property): maplibregl.Marker {
 }
 
 function applyFilter() {
+  const counts: Record<PropertyType, number> = { casa: 0, edificio: 0, finca: 0 };
   let visible = 0;
   for (const { marker, property } of markers.values()) {
+    counts[property.type]++;
     const show = activeTypes.has(property.type);
     marker.getElement().style.display = show ? '' : 'none';
     if (show) visible++;
   }
-  countEl.textContent = `${visible} inmuebles en venta cerca`;
+  totalEl.textContent = String(visible);
+  chipsEl.innerHTML = TYPES.map(
+    (t) => `<button class="chip ${activeTypes.has(t) ? '' : 'off'}" data-type="${t}" style="--c:${TYPE_COLOR[t]}" aria-label="${TYPE_PLURAL[t]}">${typeIcon(t, 18)}<b>${counts[t]}</b></button>`,
+  ).join('');
+  updateNearest();
 }
 
-// --- Filtros por tipo ---
-document.querySelectorAll<HTMLButtonElement>('.chip').forEach((chip) => {
-  chip.addEventListener('click', () => {
-    const t = chip.dataset.type as PropertyType;
-    if (activeTypes.has(t)) activeTypes.delete(t);
-    else activeTypes.add(t);
-    chip.classList.toggle('off', !activeTypes.has(t));
-    applyFilter();
-  });
+chipsEl.addEventListener('click', (e) => {
+  const chip = (e.target as HTMLElement).closest<HTMLElement>('.chip');
+  if (!chip) return;
+  const t = chip.dataset.type as PropertyType;
+  if (activeTypes.has(t)) activeTypes.delete(t);
+  else activeTypes.add(t);
+  applyFilter();
+});
+
+/** Etiqueta "Más cercano" sobre el inmueble visible más próximo al usuario. */
+let nearestId: string | null = null;
+function updateNearest() {
+  const from = user ?? genCenter;
+  if (!from) return;
+  let best: string | null = null;
+  let bestD = Infinity;
+  for (const [id, { property, marker }] of markers) {
+    if (marker.getElement().style.display === 'none') continue;
+    const d = distanceM(from, property);
+    if (d < bestD) {
+      bestD = d;
+      best = id;
+    }
+  }
+  if (best === nearestId) return;
+  if (nearestId) markers.get(nearestId)?.marker.getElement().classList.remove('nearest');
+  nearestId = best;
+  if (best) markers.get(best)?.marker.getElement().classList.add('nearest');
+}
+
+// --- Búsqueda ---
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim().toLowerCase();
+  if (!q) return resultsEl.classList.add('hidden');
+  const from = user ?? genCenter ?? DEFAULT_LOCATION;
+  const found = [...markers.values()]
+    .map((m) => m.property)
+    .filter((p) => `${p.title} ${p.address} ${TYPE_LABEL[p.type]} ${p.price}`.toLowerCase().includes(q))
+    .sort((a, b) => distanceM(from, a) - distanceM(from, b))
+    .slice(0, 5);
+  resultsEl.classList.remove('hidden');
+  resultsEl.innerHTML = found.length
+    ? found
+        .map(
+          (p) => `<button data-id="${p.id}"><span style="color:${TYPE_COLOR[p.type]}">${typeIcon(p.type, 20)}</span><div><b>${p.title}</b><small>${formatPrice(p.price)} · a ${formatDistance(distanceM(from, p))}</small></div></button>`,
+        )
+        .join('')
+    : '<div class="empty">Sin resultados cerca</div>';
+});
+resultsEl.addEventListener('click', (e) => {
+  const id = (e.target as HTMLElement).closest<HTMLElement>('button')?.dataset.id;
+  const p = id ? markers.get(id)?.property : undefined;
+  if (!p) return;
+  resultsEl.classList.add('hidden');
+  searchInput.value = '';
+  searchInput.blur();
+  openSheet(p);
 });
 
 // --- Ficha (bottom sheet) ---
@@ -135,7 +217,7 @@ function openSheet(p: Property) {
   sheet.classList.add('open');
   follow = false;
   recenterBtn.classList.remove('hidden');
-  map.easeTo({ center: [p.lng, p.lat], duration: 500 });
+  map.easeTo({ center: [p.lng, p.lat], offset: [0, -140], duration: 500 });
 }
 
 function closeSheet() {
@@ -145,38 +227,43 @@ function closeSheet() {
 
 function renderSheet(p: Property) {
   const dist = user ? formatDistance(distanceM(user, p)) : '—';
-  const stats = [
-    `${p.areaM2.toLocaleString('es-EC')} m²`,
-    p.bedrooms != null ? `${p.bedrooms} hab.` : null,
-    p.bathrooms != null ? `${p.bathrooms} baños` : null,
-  ].filter(Boolean);
+  const second = p.bedrooms != null ? { v: String(p.bedrooms), l: 'Habitaciones' } : { v: 'Comercial', l: 'Uso' };
   sheet.innerHTML = `
-    <button class="sheet-close" aria-label="Cerrar">✕</button>
-    <img src="${placeholderImage(p)}" alt="" />
-    <div class="sheet-body">
-      <span class="tag" style="--c:${TYPE_COLOR[p.type]}">${TYPE_LABEL[p.type]} · En venta</span>
+    <button class="sheet-close" aria-label="Cerrar">‹</button>
+    <div class="sheet-head">
       <h2>${p.title}</h2>
-      <div class="price">${formatPrice(p.price)}</div>
-      <div class="stats">${stats.map((s) => `<span>${s}</span>`).join('')}<span>📍 a ${dist}</span></div>
-      <p class="addr">${p.address}</p>
-      <p>${p.description}</p>
-      <button class="primary" id="go">Cómo llegar</button>
-    </div>`;
+      <p class="sub">${TYPE_LABEL[p.type]} · ${p.address}</p>
+      <div class="tags"><span class="pill">● En venta</span><span class="pill sun">${p.condition}</span></div>
+    </div>
+    <div class="stats3">
+      <div><b>${p.areaM2.toLocaleString('es-EC')} m²</b><small>Área</small></div>
+      <div><b>${second.v}</b><small>${second.l}</small></div>
+      <div><b>${dist}</b><small>Distancia</small></div>
+    </div>
+    <img src="${illustration(p)}" alt="" />
+    <p class="desc">${p.description}</p>
+    <div class="sheet-foot"><span class="price">${formatPrice(p.price)}</span><button class="how" id="go">Cómo llegar <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>`;
   sheet.querySelector('.sheet-close')!.addEventListener('click', closeSheet);
   sheet.querySelector('#go')!.addEventListener('click', () => void nav.preview(p));
 }
 
-map.on('click', closeSheet);
+map.on('click', () => {
+  closeSheet();
+  resultsEl.classList.add('hidden');
+});
 map.on('dragstart', () => {
   if (nav.active) return;
   follow = false;
   recenterBtn.classList.remove('hidden');
 });
 
+// --- Controles del mapa ---
+$('zin').addEventListener('click', () => map.zoomIn());
+$('zout').addEventListener('click', () => map.zoomOut());
 recenterBtn.addEventListener('click', () => {
   follow = true;
   recenterBtn.classList.add('hidden');
-  if (user) map.easeTo({ center: [user.lng, user.lat], zoom: 15.5, duration: 600 });
+  if (user) map.easeTo({ center: [user.lng, user.lat], zoom: 14.4, duration: 600 });
 });
 
 // --- Arranque ---
@@ -192,7 +279,7 @@ watchGps(
     if (firstFix) {
       firstFix = false;
       genCenter = null; // forzar regeneración alrededor de la ubicación real
-      map.jumpTo({ center: [f.lng, f.lat], zoom: 15.5 });
+      map.jumpTo({ center: [f.lng, f.lat], zoom: 14.4 });
     }
     onFix(f);
   },

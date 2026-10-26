@@ -14,6 +14,7 @@ export interface Property extends LatLng {
   bedrooms: number | null;
   bathrooms: number | null;
   address: string;
+  condition: string;
   description: string;
 }
 
