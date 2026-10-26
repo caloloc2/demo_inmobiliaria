@@ -3,9 +3,21 @@ import { cumulative, project, type Coord } from './geom';
 
 export type Mode = 'driving' | 'foot';
 
+export interface Lane {
+  valid: boolean;
+  /** Flechas de cada carril (p. ej. ['straight', 'right']). */
+  indications: string[];
+}
+
 export interface RouteStep {
   text: string;
   icon: string;
+  /** Calle por la que se circula después de la maniobra. */
+  road: string;
+  lng: number;
+  lat: number;
+  /** Carriles al acercarse a la maniobra, si el servicio los entrega. */
+  lanes?: Lane[];
   /** Metros desde el inicio de la ruta donde ocurre la maniobra. */
   at: number;
 }
@@ -29,6 +41,7 @@ const BASE: Record<Mode, string> = {
 
 interface OsrmStep {
   name: string;
+  intersections?: { lanes?: Lane[] }[];
   maneuver: { type: string; modifier?: string; exit?: number; location: Coord };
 }
 
@@ -81,11 +94,16 @@ export async function fetchRoute(from: LatLng, to: LatLng, mode: Mode, signal?: 
   let hint = 0;
   const steps: RouteStep[] = (r.legs[0].steps as OsrmStep[]).map((s, i, all) => {
     const { text, icon } = describe(s);
-    if (i === 0) return { text, icon, at: 0 };
-    if (i === all.length - 1) return { text, icon, at: cum[cum.length - 1] };
-    const p = project(coords, cum, { lng: s.maneuver.location[0], lat: s.maneuver.location[1] }, hint);
+    const [lng, lat] = s.maneuver.location;
+    const base = { text, icon, road: s.name ?? '', lng, lat };
+    if (i === 0) return { ...base, at: 0 };
+    // Los carriles se muestran en la última intersección del tramo anterior, justo antes del giro.
+    const ints = all[i - 1].intersections;
+    const lanes = ints?.[ints.length - 1]?.lanes;
+    if (i === all.length - 1) return { ...base, at: cum[cum.length - 1] };
+    const p = project(coords, cum, { lng, lat }, hint);
     hint = p.index;
-    return { text, icon, at: p.traveled };
+    return { ...base, at: p.traveled, lanes };
   });
 
   return { mode, coords, cum, distance: r.distance, duration: r.duration, steps };
@@ -105,8 +123,8 @@ export function straightRoute(from: LatLng, to: LatLng, mode: Mode): Route {
   return {
     mode, coords, cum, distance, duration: distance / speed, approximate: true,
     steps: [
-      { text: 'Dirígete hacia el destino', icon: '↑', at: 0 },
-      { text: 'Has llegado a tu destino', icon: '🏁', at: distance },
+      { text: 'Dirígete hacia el destino', icon: '↑', road: '', lng: from.lng, lat: from.lat, at: 0 },
+      { text: 'Has llegado a tu destino', icon: '🏁', road: '', lng: to.lng, lat: to.lat, at: distance },
     ],
   };
 }

@@ -87,6 +87,7 @@ function onFix(f: Fix) {
   refreshProperties(f);
   updateNearest();
   alerts.check(f);
+  if (Date.now() - lastHome > 15000) renderHome();
   if (alerts.settings.enabled) void reportPosition(f, alerts.settings.radiusM);
   if (nav.navigating) nav.feed(f);
   else if (follow && !nav.active) map.easeTo({ center: [f.lng, f.lat], duration: 600 });
@@ -128,6 +129,7 @@ function refreshProperties(center: LatLng) {
   }
   for (const [id, p] of next) if (!markers.has(id)) markers.set(id, { marker: makeMarker(p), property: p });
   applyFilter();
+  renderHome();
 }
 
 function makeMarker(p: Property): maplibregl.Marker {
@@ -288,11 +290,13 @@ function showToast(p: Property, distM: number) {
 
 // --- Panel de alertas ---
 const alertPanel = $('alertpanel');
-$('bell').addEventListener('click', (e) => {
-  e.preventDefault();
-  void renderAlertPanel();
-  alertPanel.classList.add('open');
-});
+for (const id of ['bell', 'bell2']) {
+  $(id).addEventListener('click', (e) => {
+    e.preventDefault();
+    void renderAlertPanel();
+    alertPanel.classList.add('open');
+  });
+}
 function closeAlertPanel() {
   alertPanel.classList.remove('open');
 }
@@ -352,11 +356,138 @@ alertPanel.addEventListener('click', async (e) => {
 // --- Abrir un inmueble desde una notificación ---
 function openById(id: string) {
   const p = provider.get(id);
-  if (p) openSheet(p);
+  if (!p) return;
+  setView('map');
+  openSheet(p);
 }
 navigator.serviceWorker?.addEventListener('message', (e) => {
   if (e.data?.type === 'open-property') openById(e.data.id);
 });
+
+// --- Inicio: saludo + mejores inmuebles ---
+const NAME_KEY = 'inmuebles.name';
+const storage = {
+  get: (k: string) => {
+    try {
+      return localStorage.getItem(k);
+    } catch {
+      return null;
+    }
+  },
+  set: (k: string, v: string) => {
+    try {
+      localStorage.setItem(k, v);
+    } catch {
+      /* ignorar */
+    }
+  },
+};
+let userName = storage.get(NAME_KEY) || 'Andrea';
+let homeType: PropertyType | 'all' = 'all';
+let homeQuery = '';
+let lastHome = 0;
+
+function renderGreeting() {
+  const h = new Date().getHours();
+  $('greet-time').textContent = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
+  $('greet-name').textContent = `Hola, ${userName} 👋`;
+  $('avatar').textContent = userName.charAt(0).toUpperCase();
+}
+$('avatar').addEventListener('click', () => {
+  const n = window.prompt('¿Cómo te llamas?', userName)?.trim();
+  if (n) {
+    userName = n.slice(0, 20);
+    storage.set(NAME_KEY, userName);
+    renderGreeting();
+  }
+});
+
+/** Los "mejores": bien calificados y cercanos. */
+const score = (p: Property, from: LatLng) => p.rating - distanceM(from, p) / 1000 * 0.35;
+
+function renderHome() {
+  lastHome = Date.now();
+  const from = user ?? genCenter ?? DEFAULT_LOCATION;
+  const q = homeQuery.trim().toLowerCase();
+  const all = provider.nearby(from, 3500);
+  const counts: Record<string, number> = { all: all.length };
+  for (const t of TYPES) counts[t] = all.filter((p) => p.type === t).length;
+  $('hchips').innerHTML = (['all', ...TYPES] as const)
+    .map((t) => `<button data-t="${t}" class="${homeType === t ? 'on' : ''}">${t === 'all' ? 'Todos' : `<span style="color:${homeType === t ? '#fff' : TYPE_COLOR[t]}">${typeIcon(t, 18)}</span>${TYPE_PLURAL[t]}`} <small>${counts[t]}</small></button>`)
+    .join('');
+
+  const list = all
+    .filter((p) => (homeType === 'all' || p.type === homeType) && (!q || `${p.title} ${p.address} ${TYPE_LABEL[p.type]} ${p.price}`.toLowerCase().includes(q)))
+    .sort((a, b) => score(b, from) - score(a, from))
+    .slice(0, 9);
+  $('hcount').textContent = list.length ? `${list.length} destacados` : '';
+
+  const [top, ...rest] = list;
+  $('featured').innerHTML = top
+    ? `<article class="feat" data-id="${top.id}">
+        <img src="${illustration(top)}" alt="" />
+        <div class="feat-body">
+          <span class="pill">⭐ Destacado</span><span class="pill sun">${top.condition}</span>
+          <h3>${top.title}</h3>
+          <p class="sub">${top.address} · a ${formatDistance(distanceM(from, top))}</p>
+          <div class="feat-foot"><span class="price">${formatPrice(top.price)}</span>
+            <button class="btn-soft" data-act="map">Ver en mapa</button>
+            <button class="btn-dark" data-act="demo">▶ Demo</button></div>
+        </div></article>`
+    : '<p class="empty-home">No hay inmuebles con ese filtro.</p>';
+  $('hlist').innerHTML = rest
+    .map(
+      (p) => `<article class="pcard" data-id="${p.id}">
+        <img src="${illustration(p)}" alt="" />
+        <div class="pc-body">
+          <div class="pc-top"><span class="pill">En venta</span><span class="rate">★ ${p.rating.toFixed(1)} <small>(${p.reviews})</small></span></div>
+          <b>${p.title}</b>
+          <small>${p.areaM2.toLocaleString('es-EC')} m²${p.bedrooms != null ? ` · ${p.bedrooms} hab.` : ''} · a ${formatDistance(distanceM(from, p))}</small>
+          <div class="pc-foot"><span class="pc-price">${formatPrice(p.price)}</span><button class="pc-go" data-act="go">Ir →</button></div>
+        </div></article>`,
+    )
+    .join('');
+}
+
+$('hchips').addEventListener('click', (e) => {
+  const t = (e.target as HTMLElement).closest<HTMLElement>('button')?.dataset.t as PropertyType | 'all' | undefined;
+  if (!t) return;
+  homeType = t;
+  renderHome();
+});
+$<HTMLInputElement>('hq').addEventListener('input', (e) => {
+  homeQuery = (e.target as HTMLInputElement).value;
+  renderHome();
+});
+$('home').addEventListener('click', (e) => {
+  const card = (e.target as HTMLElement).closest<HTMLElement>('[data-id]');
+  const p = card ? provider.get(card.dataset.id!) : undefined;
+  if (!p) return;
+  const act = (e.target as HTMLElement).closest<HTMLElement>('[data-act]')?.dataset.act;
+  setView('map');
+  if (act === 'demo') {
+    alerts.setDestination(p.id);
+    void nav.demo(p);
+  } else if (act === 'go') {
+    alerts.setDestination(p.id);
+    void nav.preview(p);
+  } else openSheet(p);
+});
+
+// --- Pestañas Inicio / Mapa ---
+function setView(v: 'home' | 'map') {
+  document.body.classList.toggle('view-home', v === 'home');
+  document.body.classList.toggle('view-map', v === 'map');
+  document.querySelectorAll<HTMLElement>('#tabbar button').forEach((b) => b.classList.toggle('on', b.dataset.view === v));
+  if (v === 'map') map.resize();
+  else closeSheet();
+}
+$('tabbar').addEventListener('click', (e) => {
+  const v = (e.target as HTMLElement).closest<HTMLElement>('button')?.dataset.view as 'home' | 'map' | undefined;
+  if (v) setView(v);
+});
+renderGreeting();
+renderHome();
 
 // --- Controles del mapa ---
 $('zin').addEventListener('click', () => map.zoomIn());

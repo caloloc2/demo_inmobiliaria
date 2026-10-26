@@ -27,6 +27,14 @@ const SIM_SPEEDS: Record<Mode, number[]> = { driving: [12, 25, 40], foot: [3, 6,
 const OFF_ROUTE_M = 50;
 const ARRIVAL_M = 25;
 
+const LANE_ARROW: Record<string, string> = {
+  left: '↰', 'slight left': '↖', 'sharp left': '↰', straight: '↑', 'slight right': '↗', 'sharp right': '↱', right: '↱', uturn: '↩', none: '↑',
+};
+const laneHtml = (lanes?: { valid: boolean; indications: string[] }[]) =>
+  lanes?.length
+    ? `<div class="lanes">${lanes.map((l) => `<span class="lane ${l.valid ? 'valid' : ''}">${l.indications.map((i) => LANE_ARROW[i] ?? '↑').join('')}</span>`).join('')}</div>`
+    : '';
+
 const angleDiff = (from: number, to: number) => ((to - from + 540) % 360) - 180;
 
 export function createNavigation(deps: NavDeps) {
@@ -34,6 +42,8 @@ export function createNavigation(deps: NavDeps) {
   const navbar = document.getElementById('navbar')!;
   const panel = document.getElementById('routepanel')!;
   const speedEl = document.getElementById('speed')!;
+  const streetEl = document.getElementById('street')!;
+  const compassEl = document.getElementById('compass')!;
 
   let state: State = 'idle';
   let view: View = 'drive';
@@ -60,6 +70,12 @@ export function createNavigation(deps: NavDeps) {
   destEl.className = 'dest';
   destEl.innerHTML = '<div class="dest-tag" id="dest-tag"></div><div class="dest-dot"></div>';
   const destMarker = new maplibregl.Marker({ element: destEl });
+
+  // Burbuja sobre la ruta con el giro siguiente y la calle a la que entras (como en Google Maps).
+  const bubbleEl = document.createElement('div');
+  bubbleEl.className = 'turn-bubble';
+  const bubbleMarker = new maplibregl.Marker({ element: bubbleEl, anchor: 'bottom-left', offset: [8, -8] });
+  let bubbleFor = -1;
 
   function firstSymbolId(): string | undefined {
     return map.getStyle().layers.find((l) => l.type === 'symbol')?.id;
@@ -190,6 +206,9 @@ export function createNavigation(deps: NavDeps) {
     navbar.classList.add('hidden');
     panel.classList.add('hidden');
     speedEl.classList.add('hidden');
+    streetEl.classList.add('hidden');
+    bubbleMarker.remove();
+    bubbleFor = -1;
     document.body.classList.remove('navigating', 'driveview');
     map.easeTo({ pitch: 0, bearing: 0, duration: 500 });
     deps.onActiveChange(false);
@@ -264,9 +283,27 @@ export function createNavigation(deps: NavDeps) {
     const isLast = next === route.steps[route.steps.length - 1];
     navbar.classList.remove('hidden');
     if (arrived) {
-      navbar.innerHTML = `<div class="turn-ico">🏁</div><div><div class="turn-txt">Has llegado</div><div class="turn-dist">${dest?.title ?? ''}</div></div>`;
+      navbar.innerHTML = `<div class="turn-main"><div class="turn-ico">🏁</div><div><div class="turn-txt">Has llegado</div><div class="turn-dist">${dest?.title ?? ''}</div></div></div>`;
     } else {
-      navbar.innerHTML = `<div class="turn-ico">${isLast ? '🏁' : next.icon}</div><div><div class="turn-txt">${isLast ? 'Tu destino está adelante' : next.text}</div><div class="turn-dist">en ${formatDistance(Math.max(0, next.at - pr.traveled))}</div></div>`;
+      const near = next.at - pr.traveled < 400; // los carriles solo importan al acercarse
+      navbar.innerHTML = `<div class="turn-main"><div class="turn-ico">${isLast ? '🏁' : next.icon}</div><div><div class="turn-dist">${formatDistance(Math.max(0, next.at - pr.traveled))}</div><div class="turn-txt">${isLast ? 'Tu destino está adelante' : next.text}</div></div></div>${near && !isLast ? laneHtml(next.lanes) : ''}`;
+    }
+
+    // Calle actual y burbuja del próximo giro.
+    const cur = [...route.steps].reverse().find((st) => st.at <= pr.traveled + 1);
+    streetEl.textContent = cur?.road ?? '';
+    streetEl.classList.toggle('hidden', !cur?.road || arrived);
+    const nextIdx = route.steps.indexOf(next);
+    if (!isLast && !arrived && next.road) {
+      if (bubbleFor !== nextIdx) {
+        bubbleFor = nextIdx;
+        bubbleEl.innerHTML = `<b>${next.icon}</b> ${next.road}`;
+        bubbleMarker.setLngLat([next.lng, next.lat]);
+        if (!bubbleEl.isConnected) bubbleMarker.addTo(map);
+      }
+    } else {
+      bubbleMarker.remove();
+      bubbleFor = -1;
     }
 
     // Velocidad.
@@ -292,7 +329,7 @@ export function createNavigation(deps: NavDeps) {
       if (offCount >= 3 && Date.now() - lastReroute > 10000) {
         offCount = 0;
         lastReroute = Date.now();
-        navbar.innerHTML = '<div class="turn-ico">⟳</div><div><div class="turn-txt">Recalculando ruta…</div></div>';
+        navbar.innerHTML = '<div class="turn-main"><div class="turn-ico">⟳</div><div><div class="turn-txt">Recalculando ruta…</div></div></div>';
         void loadRoute();
       }
     }
@@ -325,6 +362,26 @@ export function createNavigation(deps: NavDeps) {
     }
   }
 
+  function toggleView() {
+    view = view === 'drive' ? 'overview' : 'drive';
+    applyView();
+    renderPanel();
+    if (prevFix) moveCamera(prevFix, camBearing, lastSpeedKmh != null ? lastSpeedKmh / 3.6 : null);
+  }
+  compassEl.addEventListener('click', () => state === 'navigating' && toggleView());
+  const spin = () => ((compassEl.firstElementChild as HTMLElement).style.transform = `rotate(${-map.getBearing()}deg)`);
+  map.on('rotate', spin);
+
+  /** Demo: calcula la ruta, inicia la navegación en modo conducción y simula el recorrido. */
+  async function demo(p: Property) {
+    mode = 'driving';
+    await preview(p);
+    if (!route) return;
+    start();
+    simSpeedIdx = 0;
+    toggleSim();
+  }
+
   panel.addEventListener('click', async (e) => {
     const el = (e.target as HTMLElement).closest('button');
     if (!el) return;
@@ -345,17 +402,13 @@ export function createNavigation(deps: NavDeps) {
       case 'exit': exit(); break;
       case 'sim': toggleSim(); break;
       case 'speed': cycleSpeed(); break;
-      case 'view':
-        view = view === 'drive' ? 'overview' : 'drive';
-        applyView();
-        renderPanel();
-        if (prevFix) moveCamera(prevFix, camBearing, lastSpeedKmh != null ? lastSpeedKmh / 3.6 : null);
-        break;
+      case 'view': toggleView(); break;
     }
   });
 
   return {
     preview,
+    demo,
     feed(f: Fix) {
       updateProgress(f, f.heading, f.speed);
     },

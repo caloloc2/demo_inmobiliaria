@@ -58,7 +58,7 @@ function build(rnd: () => number, id: string, center: LatLng): Property {
     description = `Finca de ${(areaM2 / 10000).toFixed(1)} hectáreas con casa principal, agua propia y acceso lastrado. Ideal para vivienda campestre o proyecto productivo.`;
   }
 
-  return { id, type, title, price, areaM2, bedrooms, bathrooms, address: `${street} N${number}, ${neighborhood}`, condition: pick(rnd, CONDITIONS), description, ...center };
+  return { id, type, title, price, areaM2, bedrooms, bathrooms, address: `${street} N${number}, ${neighborhood}`, condition: pick(rnd, CONDITIONS), description, rating: 4 + int(rnd, 0, 9) / 10, reviews: int(rnd, 6, 120), ...center };
 }
 
 export class SimulatedPropertyProvider implements PropertyProvider {
