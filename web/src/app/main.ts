@@ -8,6 +8,7 @@ import { SimulatedPropertyProvider } from '../properties/generator';
 import { distanceM, formatDistance } from '../properties/geo';
 import { TYPE_COLOR, TYPE_EMOJI, TYPE_LABEL, formatPrice, placeholderImage } from '../properties/format';
 import type { LatLng, Property, PropertyType } from '../properties/types';
+import { createNavigation } from './navigation';
 
 const SEARCH_RADIUS_M = 2500;
 maplibregl.setWorkerUrl(workerUrl);
@@ -56,10 +57,25 @@ function onFix(f: Fix) {
   userMarker.setLngLat([f.lng, f.lat]);
   if (!userMarker.getElement().isConnected) userMarker.addTo(map);
   if (f.heading != null) userMarker.setRotation(f.heading);
-  if (follow) map.easeTo({ center: [f.lng, f.lat], duration: 600 });
   refreshProperties(f);
+  if (nav.navigating) nav.feed(f);
+  else if (follow && !nav.active) map.easeTo({ center: [f.lng, f.lat], duration: 600 });
   if (sheetProperty) renderSheet(sheetProperty);
 }
+
+const nav = createNavigation({
+  map,
+  getOrigin: () => user ?? DEFAULT_LOCATION,
+  onActiveChange: (active) => {
+    document.body.classList.toggle('routing', active);
+    if (active) closeSheet();
+    else {
+      follow = true;
+      recenterBtn.classList.add('hidden');
+    }
+  },
+  onSimFix: (f) => onFix(f),
+});
 
 function refreshProperties(center: LatLng) {
   // Solo regenerar cuando nos alejamos lo suficiente del último centro.
@@ -144,13 +160,15 @@ function renderSheet(p: Property) {
       <div class="stats">${stats.map((s) => `<span>${s}</span>`).join('')}<span>📍 a ${dist}</span></div>
       <p class="addr">${p.address}</p>
       <p>${p.description}</p>
-      <button class="primary" disabled>Cómo llegar (próximamente)</button>
+      <button class="primary" id="go">Cómo llegar</button>
     </div>`;
   sheet.querySelector('.sheet-close')!.addEventListener('click', closeSheet);
+  sheet.querySelector('#go')!.addEventListener('click', () => void nav.preview(p));
 }
 
 map.on('click', closeSheet);
 map.on('dragstart', () => {
+  if (nav.active) return;
   follow = false;
   recenterBtn.classList.remove('hidden');
 });
@@ -163,11 +181,14 @@ recenterBtn.addEventListener('click', () => {
 
 // --- Arranque ---
 // Sin GPS mostramos igualmente propiedades de ejemplo para que el demo nunca quede vacío.
-map.on('load', () => refreshProperties(DEFAULT_LOCATION));
+map.on('load', () => {
+  if (!user) refreshProperties(DEFAULT_LOCATION);
+});
 
 let firstFix = true;
 watchGps(
   (f) => {
+    if (nav.simulating) return;
     if (firstFix) {
       firstFix = false;
       genCenter = null; // forzar regeneración alrededor de la ubicación real
