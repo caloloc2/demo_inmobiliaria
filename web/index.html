@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Inmuebles" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <title>Inmuebles en Ruta</title>
+</head>
+<body>
+  <main>
+    <img class="logo" src="/icon.svg" alt="" />
+    <p class="badge">Demo MVP</p>
+    <h1>Encuentra inmuebles en venta mientras te mueves</h1>
+    <p class="lead">Navega en auto o a pie y descubre casas, edificios y fincas cercanas. Instala la app en tu teléfono en menos de un minuto.</p>
+
+    <section id="android" class="card hidden">
+      <h2>Android</h2>
+      <button id="install-btn" class="hidden">Instalar app</button>
+      <ol id="android-steps">
+        <li>Abre esta página en <b>Chrome</b>.</li>
+        <li>Toca el menú <b>⋮</b> y elige <b>Instalar app</b> (o "Agregar a pantalla principal").</li>
+        <li>Abre <b>Inmuebles</b> desde tu pantalla de inicio y acepta los permisos de ubicación y notificaciones.</li>
+      </ol>
+    </section>
+
+    <section id="ios" class="card hidden">
+      <h2>iPhone / iPad</h2>
+      <ol>
+        <li>Abre esta página en <b>Safari</b> (iOS 16.4 o superior).</li>
+        <li>Toca <b>Compartir</b> <span aria-hidden="true">⬆︎</span>.</li>
+        <li>Elige <b>Agregar a inicio</b> y confirma.</li>
+        <li>Abre <b>Inmuebles</b> desde el inicio y acepta ubicación y notificaciones.</li>
+      </ol>
+      <small>Las notificaciones solo funcionan con la app instalada en el inicio.</small>
+    </section>
+
+    <section id="desktop" class="card hidden">
+      <h2>Estás en un computador</h2>
+      <p>Abre <b id="url"></b> desde tu teléfono para instalar la app.</p>
+    </section>
+
+    <a class="btn secondary" href="/app/">Abrir la app sin instalar</a>
+  </main>
+  <script type="module" src="/src/landing/main.ts"></script>
+</body>
+</html>
