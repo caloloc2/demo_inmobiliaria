@@ -151,10 +151,19 @@ export class WebStack extends Stack {
       prune: false,
       cacheControl: [s3deploy.CacheControl.fromString('public,max-age=31536000,immutable')],
     });
+    // Fotos (sin hash en el nombre): una semana de caché en el navegador y el CDN.
+    new s3deploy.BucketDeployment(this, 'DeployPhotos', {
+      sources: [s3deploy.Source.asset(dist)],
+      include: ['photos/*'],
+      exclude: ['*'],
+      destinationBucket: bucket,
+      prune: false,
+      cacheControl: [s3deploy.CacheControl.fromString('public,max-age=604800')],
+    });
     // Resto (html, sw, manifest, iconos): siempre revalidar. Invalida el CDN al terminar.
     new s3deploy.BucketDeployment(this, 'DeployRest', {
       sources: [s3deploy.Source.asset(dist)],
-      exclude: ['assets/*'],
+      exclude: ['assets/*', 'photos/*'],
       destinationBucket: bucket,
       prune: false,
       distribution,

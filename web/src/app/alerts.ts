@@ -1,5 +1,5 @@
 import { distanceM, formatDistance } from '../properties/geo';
-import { TYPE_LABEL, formatPrice } from '../properties/format';
+import { TYPE_LABEL, formatPrice, photos } from '../properties/format';
 import type { LatLng, Property, PropertyProvider } from '../properties/types';
 
 export interface AlertSettings {
@@ -81,7 +81,8 @@ async function showSystemNotification(p: Property, distM: number) {
       badge: '/icon-192.png',
       tag: `prop-${p.id}`,
       data: { id: p.id },
-    });
+      image: photos(p).hero,
+    } as NotificationOptions);
   } catch {
     /* sin Service Worker activo */
   }

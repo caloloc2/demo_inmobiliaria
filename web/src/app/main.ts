@@ -10,7 +10,7 @@ import { createNavigation } from './navigation';
 import { disablePush, enablePush, pushState, reportPosition, sendTestPush, type PushState } from './push';
 import { SimulatedPropertyProvider } from '../properties/generator';
 import { distanceM, formatDistance } from '../properties/geo';
-import { TYPE_COLOR, TYPE_LABEL, TYPE_PLURAL, formatPrice, illustration, typeIcon } from '../properties/format';
+import { TYPE_COLOR, TYPE_LABEL, TYPE_PLURAL, formatPrice, photos, shortPrice, typeIcon } from '../properties/format';
 import type { LatLng, Property, PropertyType } from '../properties/types';
 
 const SEARCH_RADIUS_M = 2000;
@@ -20,28 +20,86 @@ registerSW({ immediate: true });
 maplibregl.setWorkerUrl(workerUrl);
 const provider = new SimulatedPropertyProvider();
 
+type Theme = 'day' | 'night';
+const STYLE: Record<Theme, string> = {
+  day: 'https://tiles.openfreemap.org/styles/positron',
+  night: 'https://tiles.openfreemap.org/styles/dark',
+};
+const THEME_KEY = 'inmuebles.theme';
+const store = {
+  get: (k: string) => {
+    try {
+      return localStorage.getItem(k);
+    } catch {
+      return null;
+    }
+  },
+  set: (k: string, v: string) => {
+    try {
+      localStorage.setItem(k, v);
+    } catch {
+      /* ignorar */
+    }
+  },
+};
+const hour = new Date().getHours();
+// Sin preferencia guardada: de noche el mapa va oscuro.
+let theme: Theme = (store.get(THEME_KEY) as Theme | null) ?? (hour >= 19 || hour < 5 ? 'night' : 'day');
+document.body.dataset.theme = theme;
+
 const map = new maplibregl.Map({
   container: 'map',
-  style: 'https://tiles.openfreemap.org/styles/positron',
+  style: STYLE[theme],
   center: [DEFAULT_LOCATION.lng, DEFAULT_LOCATION.lat],
   zoom: 14.5,
   attributionControl: { compact: true },
 });
 
-/** Paleta cálida y suave del diseño (el estilo base es gris frío). */
+/** Paletas suaves y cálidas (día) o azul marino (noche) sobre los estilos base. */
+const PALETTE = {
+  day: {
+    background: '#ece8e0', park: '#dde7d0', wood: '#d6e3c6', water: '#cfe3ef', building: '#e1dcd1', residential: '#e8e3da',
+    road: '#ffffff', roadMajor: '#ffffff',
+  },
+  night: {
+    background: '#0f141d', park: '#12251f', wood: '#10211c', water: '#0b1b2e', building: '#1a2231', residential: '#111823',
+    road: '#2a3447', roadMajor: '#3a4660',
+  },
+};
 function tuneStyle() {
+  const c = PALETTE[theme];
   const paint = (id: string, prop: string, value: string) => {
     if (map.getLayer(id)) map.setPaintProperty(id, prop as 'background-color', value);
   };
-  paint('background', 'background-color', '#ece8e0');
-  paint('park', 'fill-color', '#dde7d0');
-  paint('landcover_wood', 'fill-color', '#d6e3c6');
-  paint('water', 'fill-color', '#cfe3ef');
-  paint('building', 'fill-color', '#e1dcd1');
-  paint('landuse_residential', 'fill-color', '#e8e3da');
-  for (const id of ['highway_minor', 'highway_major_inner', 'highway_motorway_inner']) paint(id, 'line-color', '#ffffff');
+  paint('background', 'background-color', c.background);
+  for (const id of ['park', 'landuse_park']) paint(id, 'fill-color', c.park);
+  paint('landcover_wood', 'fill-color', c.wood);
+  paint('water', 'fill-color', c.water);
+  paint('building', 'fill-color', c.building);
+  paint('landuse_residential', 'fill-color', c.residential);
+  paint('highway_minor', 'line-color', c.road);
+  for (const id of ['highway_major_inner', 'highway_motorway_inner']) paint(id, 'line-color', c.roadMajor);
+  // Luz suave para que los volúmenes 3D tengan sombra y no se vean como cajas planas.
+  try {
+    (map as unknown as { setLight(l: object): void }).setLight(
+      theme === 'night'
+        ? { anchor: 'viewport', color: '#d3dcff', intensity: 0.24, position: [1.2, 200, 50] }
+        : { anchor: 'viewport', color: '#fff6e8', intensity: 0.3, position: [1.15, 210, 48] },
+    );
+  } catch {
+    /* versión sin setLight */
+  }
 }
-map.on('load', tuneStyle);
+map.on('style.load', tuneStyle);
+
+function setTheme(t: Theme, remember = true) {
+  if (t === theme) return;
+  theme = t;
+  document.body.dataset.theme = t;
+  if (remember) store.set(THEME_KEY, t);
+  map.setStyle(STYLE[t]); // las capas de ruta/3D se recrean en 'style.load' (navigation.ts)
+}
+for (const id of ['theme', 'theme2']) document.getElementById(id)?.addEventListener('click', () => setTheme(theme === 'day' ? 'night' : 'day'));
 
 // --- Estado ---
 let user: Fix | null = null;
@@ -137,12 +195,12 @@ function makeMarker(p: Property): maplibregl.Marker {
   el.className = 'pin';
   el.style.setProperty('--c', TYPE_COLOR[p.type]);
   el.setAttribute('aria-label', `${TYPE_LABEL[p.type]} en venta ${formatPrice(p.price)}`);
-  el.innerHTML = `${typeIcon(p.type, 22)}<span class="pin-tag">Más cercano</span>`;
+  el.innerHTML = `<span class="pin-ico">${typeIcon(p.type, 16)}</span><b>${shortPrice(p.price)}</b><span class="pin-tag">Más cercano</span>`;
   el.addEventListener('click', (e) => {
     e.stopPropagation();
     openSheet(p);
   });
-  return new maplibregl.Marker({ element: el }).setLngLat([p.lng, p.lat]).addTo(map);
+  return new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, 6] }).setLngLat([p.lng, p.lat]).addTo(map);
 }
 
 function applyFilter() {
@@ -240,21 +298,28 @@ function closeSheet() {
 function renderSheet(p: Property) {
   const dist = user ? formatDistance(distanceM(user, p)) : '—';
   const second = p.bedrooms != null ? { v: String(p.bedrooms), l: 'Habitaciones' } : { v: 'Comercial', l: 'Uso' };
+  const ph = photos(p);
   sheet.innerHTML = `
-    <button class="sheet-close" aria-label="Cerrar">‹</button>
-    <div class="sheet-head">
-      <h2>${p.title}</h2>
-      <p class="sub">${TYPE_LABEL[p.type]} · ${p.address}</p>
-      <div class="tags"><span class="pill">● En venta</span><span class="pill sun">${p.condition}</span></div>
+    <div class="hero">
+      <div class="gallery">${ph.gallery.map((src, i) => `<img src="${src}" alt="${p.title} (foto ${i + 1})" loading="${i ? 'lazy' : 'eager'}" />`).join('')}</div>
+      <button class="sheet-close" aria-label="Cerrar">‹</button>
+      <span class="hero-rate">★ ${p.rating.toFixed(1)} <small>(${p.reviews})</small></span>
+      <span class="hero-count">${ph.gallery.length} fotos</span>
     </div>
-    <div class="stats3">
-      <div><b>${p.areaM2.toLocaleString('es-EC')} m²</b><small>Área</small></div>
-      <div><b>${second.v}</b><small>${second.l}</small></div>
-      <div><b>${dist}</b><small>Distancia</small></div>
-    </div>
-    <img src="${illustration(p)}" alt="" />
-    <p class="desc">${p.description}</p>
-    <div class="sheet-foot"><span class="price">${formatPrice(p.price)}</span><button class="how" id="go">Cómo llegar <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>`;
+    <div class="sheet-inner">
+      <div class="sheet-head">
+        <h2>${p.title}</h2>
+        <p class="sub">${TYPE_LABEL[p.type]} · ${p.address}</p>
+        <div class="tags"><span class="pill">● En venta</span><span class="pill sun">${p.condition}</span></div>
+      </div>
+      <div class="stats3">
+        <div><b>${p.areaM2.toLocaleString('es-EC')} m²</b><small>Área</small></div>
+        <div><b>${second.v}</b><small>${second.l}</small></div>
+        <div><b>${dist}</b><small>Distancia</small></div>
+      </div>
+      <p class="desc">${p.description}</p>
+      <div class="sheet-foot"><span class="price">${formatPrice(p.price)}</span><button class="how" id="go">Cómo llegar <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+    </div>`;
   sheet.querySelector('.sheet-close')!.addEventListener('click', closeSheet);
   sheet.querySelector('#go')!.addEventListener('click', () => {
     alerts.setDestination(p.id);
@@ -366,23 +431,7 @@ navigator.serviceWorker?.addEventListener('message', (e) => {
 
 // --- Inicio: saludo + mejores inmuebles ---
 const NAME_KEY = 'inmuebles.name';
-const storage = {
-  get: (k: string) => {
-    try {
-      return localStorage.getItem(k);
-    } catch {
-      return null;
-    }
-  },
-  set: (k: string, v: string) => {
-    try {
-      localStorage.setItem(k, v);
-    } catch {
-      /* ignorar */
-    }
-  },
-};
-let userName = storage.get(NAME_KEY) || 'Andrea';
+let userName = store.get(NAME_KEY) || 'Andrea';
 let homeType: PropertyType | 'all' = 'all';
 let homeQuery = '';
 let lastHome = 0;
@@ -397,7 +446,7 @@ $('avatar').addEventListener('click', () => {
   const n = window.prompt('¿Cómo te llamas?', userName)?.trim();
   if (n) {
     userName = n.slice(0, 20);
-    storage.set(NAME_KEY, userName);
+    store.set(NAME_KEY, userName);
     renderGreeting();
   }
 });
@@ -425,9 +474,10 @@ function renderHome() {
   const [top, ...rest] = list;
   $('featured').innerHTML = top
     ? `<article class="feat" data-id="${top.id}">
-        <img src="${illustration(top)}" alt="" />
+        <div class="feat-photo"><img src="${photos(top).hero}" alt="${top.title}" />
+          <span class="pill">⭐ Destacado</span><span class="hero-rate">★ ${top.rating.toFixed(1)} <small>(${top.reviews})</small></span></div>
         <div class="feat-body">
-          <span class="pill">⭐ Destacado</span><span class="pill sun">${top.condition}</span>
+          <span class="pill sun">${top.condition}</span>
           <h3>${top.title}</h3>
           <p class="sub">${top.address} · a ${formatDistance(distanceM(from, top))}</p>
           <div class="feat-foot"><span class="price">${formatPrice(top.price)}</span>
@@ -438,7 +488,7 @@ function renderHome() {
   $('hlist').innerHTML = rest
     .map(
       (p) => `<article class="pcard" data-id="${p.id}">
-        <img src="${illustration(p)}" alt="" />
+        <img src="${photos(p).thumb}" alt="${p.title}" loading="lazy" />
         <div class="pc-body">
           <div class="pc-top"><span class="pill">En venta</span><span class="rate">★ ${p.rating.toFixed(1)} <small>(${p.reviews})</small></span></div>
           <b>${p.title}</b>

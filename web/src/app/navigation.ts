@@ -77,39 +77,58 @@ export function createNavigation(deps: NavDeps) {
   const bubbleMarker = new maplibregl.Marker({ element: bubbleEl, anchor: 'bottom-left', offset: [8, -8] });
   let bubbleFor = -1;
 
+  /** Primera capa de etiquetas por encima de las calles: la ruta y los edificios 3D van justo debajo de los textos. */
   function firstSymbolId(): string | undefined {
-    return map.getStyle().layers.find((l) => l.type === 'symbol')?.id;
+    const layers = map.getStyle().layers;
+    let lastRoad = -1;
+    layers.forEach((l, i) => {
+      if (l.type !== 'symbol' && /^(highway|railway|road|bridge|tunnel|building)/.test(l.id)) lastRoad = i;
+    });
+    return layers.find((l, i) => i > lastRoad && l.type === 'symbol')?.id;
   }
+
+  let lastDraw: { r: Route | null; done?: number[][]; rest?: number[][] } = { r: null };
 
   function ensureLayers() {
     if (map.getSource('route')) return;
+    const night = document.body.dataset.theme === 'night';
     const before = firstSymbolId();
     const cap = { 'line-cap': 'round' as const, 'line-join': 'round' as const };
-    map.addSource('route', { type: 'geojson', data: empty });
-    map.addSource('route-done', { type: 'geojson', data: empty });
-    map.addLayer({ id: 'route-casing', type: 'line', source: 'route', layout: cap, paint: { 'line-color': '#ffffff', 'line-width': 11 } }, before);
-    map.addLayer({ id: 'route-line', type: 'line', source: 'route', layout: cap, paint: { 'line-color': '#111111', 'line-width': 6 } }, before);
-    map.addLayer({ id: 'route-done-line', type: 'line', source: 'route-done', layout: cap, paint: { 'line-color': '#5cc4f5', 'line-width': 6 } }, before);
     if (map.getSource('openmaptiles') && !map.getLayer('buildings-3d')) {
+      const h = ['min', ['coalesce', ['get', 'render_height'], 9], 110] as maplibregl.ExpressionSpecification;
       map.addLayer(
         {
           id: 'buildings-3d', type: 'fill-extrusion', source: 'openmaptiles', 'source-layer': 'building', minzoom: 15,
-          layout: { visibility: 'none' },
+          layout: { visibility: state === 'navigating' && view === 'drive' ? 'visible' : 'none' },
           paint: {
-            'fill-extrusion-color': '#e3ded4',
-            'fill-extrusion-height': ['coalesce', ['get', 'render_height'], 9],
+            // Más claros y con degradado según la altura, para que no se vean como cajas grises.
+            'fill-extrusion-color': ['interpolate', ['linear'], h, 0, night ? '#222b3b' : '#f1ebe0', 40, night ? '#2e3a50' : '#e6dece', 110, night ? '#44526f' : '#d5cbb9'],
+            'fill-extrusion-height': h,
             'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
-            'fill-extrusion-opacity': 0.9,
+            'fill-extrusion-opacity': night ? 0.92 : 0.88,
+            'fill-extrusion-vertical-gradient': true,
           },
         },
         before,
       );
     }
+    map.addSource('route', { type: 'geojson', data: empty });
+    map.addSource('route-done', { type: 'geojson', data: empty });
+    // Brillo suave bajo la ruta, sobre todo visible de noche.
+    map.addLayer({ id: 'route-glow', type: 'line', source: 'route', layout: cap, paint: { 'line-color': night ? '#4cc3ff' : '#8fd3fa', 'line-width': 20, 'line-blur': 10, 'line-opacity': night ? 0.55 : 0.35 } }, before);
+    map.addLayer({ id: 'route-casing', type: 'line', source: 'route', layout: cap, paint: { 'line-color': night ? '#0b1220' : '#ffffff', 'line-width': 12 } }, before);
+    map.addLayer({ id: 'route-line', type: 'line', source: 'route', layout: cap, paint: { 'line-color': night ? '#4cc3ff' : '#111111', 'line-width': 7 } }, before);
+    map.addLayer({ id: 'route-done-line', type: 'line', source: 'route-done', layout: cap, paint: { 'line-color': night ? '#2a6f95' : '#5cc4f5', 'line-width': 7 } }, before);
   }
+  // El estilo se vuelve a cargar al cambiar día/noche: recrear capas y repintar la ruta actual.
+  map.on('style.load', () => {
+    ensureLayers();
+    drawRoute(lastDraw.r, lastDraw.done, lastDraw.rest);
+  });
   if (map.isStyleLoaded()) ensureLayers();
-  else map.once('load', ensureLayers);
 
   function drawRoute(r: Route | null, doneCoords?: number[][], restCoords?: number[][]) {
+    lastDraw = { r, done: doneCoords, rest: restCoords };
     ensureLayers();
     (map.getSource('route') as maplibregl.GeoJSONSource).setData(r ? line(restCoords ?? r.coords) : empty);
     (map.getSource('route-done') as maplibregl.GeoJSONSource).setData(doneCoords && doneCoords.length > 1 ? line(doneCoords) : empty);
@@ -247,8 +266,8 @@ export function createNavigation(deps: NavDeps) {
     // Conducción: rumbo suavizado, más zoom al ir lento y más panorámica al ir rápido.
     camBearing = (camBearing + angleDiff(camBearing, heading) * 0.35 + 360) % 360;
     const kmh = (speedMs ?? (mode === 'driving' ? 8 : 1.4)) * 3.6;
-    const zoom = mode === 'foot' ? 18.3 : Math.max(16.2, 18.1 - kmh / 45);
-    map.easeTo({ center: [pos.lng, pos.lat], bearing: camBearing, pitch: 64, zoom, offset: [0, 190], duration: 250, easing: (t) => t });
+    const zoom = mode === 'foot' ? 17.9 : Math.max(15.9, 17.4 - kmh / 45);
+    map.easeTo({ center: [pos.lng, pos.lat], bearing: camBearing, pitch: 58, zoom, offset: [0, 170], duration: 250, easing: (t) => t });
   }
 
   // --- Cada posición (real o simulada) ---

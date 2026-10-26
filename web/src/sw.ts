@@ -1,6 +1,8 @@
 /// <reference lib="webworker" />
 import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
+import { CacheFirst } from 'workbox-strategies';
+import { ExpirationPlugin } from 'workbox-expiration';
 
 declare const self: ServiceWorkerGlobalScope;
 
@@ -12,12 +14,19 @@ precacheAndRoute(self.__WB_MANIFEST);
 // La landing funciona offline; la app (/app/) y la API siempre salen a la red / precache propio.
 registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html'), { denylist: [/^\/app\//, /^\/api\//] }));
 
+// Las fotos no se precargan (pesan varios MB): se guardan al verlas y quedan disponibles sin red.
+registerRoute(
+  ({ url }) => url.pathname.startsWith('/photos/'),
+  new CacheFirst({ cacheName: 'photos', plugins: [new ExpirationPlugin({ maxEntries: 120, maxAgeSeconds: 60 * 24 * 3600 })] }),
+);
+
 interface PushPayload {
   title: string;
   body: string;
   /** Id del inmueble; al tocar la notificación se abre su ficha. */
   id?: string | null;
   tag?: string;
+  image?: string;
 }
 
 self.addEventListener('push', (event) => {
@@ -35,7 +44,8 @@ self.addEventListener('push', (event) => {
       // Misma etiqueta que la alerta local: si llegan las dos, se reemplazan en vez de duplicarse.
       tag: data.tag ?? (data.id ? `prop-${data.id}` : 'inmuebles'),
       data: { id: data.id ?? null },
-    }),
+      ...(data.image ? { image: data.image } : {}),
+    } as NotificationOptions),
   );
 });
 

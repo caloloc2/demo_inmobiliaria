@@ -33,9 +33,11 @@ body.routing .hud { display: none; }
 body.routing .mapctl { display: none; }
 
 /* --- Marcadores --- */
-.pin { position: absolute; width: 44px; height: 44px; padding: 0; border-radius: 16px; background: var(--card); color: var(--c); box-shadow: 0 4px 14px rgba(30, 24, 10, .22); display: grid; place-items: center; cursor: pointer; }
-.pin::after { content: ''; position: absolute; left: 50%; bottom: -5px; width: 10px; height: 10px; background: var(--card); transform: translateX(-50%) rotate(45deg); border-radius: 2px; z-index: -1; }
-.pin-tag { display: none; position: absolute; top: 50px; left: 50%; transform: translateX(-50%); white-space: nowrap; background: var(--lime); color: var(--ink); font-size: .72rem; font-weight: 800; padding: 3px 10px; border-radius: 999px; box-shadow: var(--shadow); }
+.pin { position: absolute; width: auto; height: 38px; padding: 0 13px 0 5px; border-radius: 999px; background: var(--card); color: var(--ink); box-shadow: 0 4px 14px rgba(30, 24, 10, .28); display: flex; align-items: center; gap: 7px; cursor: pointer; font-weight: 800; font-size: .88rem; letter-spacing: -.01em; white-space: nowrap; }
+.pin::after { content: ''; position: absolute; left: 50%; bottom: -4px; width: 10px; height: 10px; background: inherit; transform: translateX(-50%) rotate(45deg); border-radius: 2px; z-index: -1; }
+.pin-ico { width: 28px; height: 28px; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: center; flex: none; }
+.pin.nearest { background: var(--ink); color: #fff; z-index: 2; }
+.pin-tag { display: none; position: absolute; top: 46px; left: 50%; transform: translateX(-50%); white-space: nowrap; background: var(--lime); color: #111; font-size: .72rem; font-weight: 800; padding: 3px 10px; border-radius: 999px; box-shadow: var(--shadow); }
 .pin.nearest .pin-tag { display: block; }
 body.routing .pin.nearest .pin-tag { display: none; }
 
@@ -50,25 +52,33 @@ body.driveview .user-tag { display: none; }
 .dest-tag { position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%); white-space: nowrap; background: var(--sun); font-weight: 800; font-size: .8rem; padding: 4px 12px; border-radius: 12px; box-shadow: var(--shadow); }
 
 /* --- Ficha del inmueble --- */
-#sheet { position: fixed; left: 8px; right: 8px; bottom: calc(var(--safe-b) + 8px); z-index: 6; max-height: 82vh; overflow: auto; background: var(--card); border-radius: 32px; transform: translateY(115%); transition: transform .28s cubic-bezier(.2, .8, .2, 1); box-shadow: 0 -4px 40px rgba(30, 24, 10, .25); padding: 20px 20px 18px; }
+#sheet { position: fixed; left: 8px; right: 8px; bottom: calc(var(--safe-b) + 8px); z-index: 6; max-height: 88vh; overflow: auto; background: var(--card); border-radius: 32px; transform: translateY(115%); transition: transform .28s cubic-bezier(.2, .8, .2, 1); box-shadow: 0 -4px 40px rgba(30, 24, 10, .25); padding: 0; }
 #sheet.open { transform: none; }
-.sheet-close { position: absolute; top: 14px; left: 14px; width: 42px; height: 42px; padding: 0; border-radius: 15px; background: var(--bg); font-size: 1.6rem; line-height: 1; }
-.sheet-head { text-align: center; padding: 6px 44px 0; }
-.sheet-head h2 { margin: 0; font-size: 1.55rem; line-height: 1.15; font-weight: 800; letter-spacing: -.02em; }
+.hero { position: relative; }
+.gallery { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; border-radius: 32px 32px 0 0; }
+.gallery::-webkit-scrollbar { display: none; }
+.gallery img { flex: none; width: 100%; aspect-ratio: 3 / 2; max-height: 38vh; object-fit: cover; scroll-snap-align: center; display: block; background: #e8e3da; }
+.hero::after { content: ''; position: absolute; inset: 0 0 auto 0; height: 90px; background: linear-gradient(#0006, transparent); border-radius: 32px 32px 0 0; pointer-events: none; }
+.sheet-close { position: absolute; top: 14px; left: 14px; z-index: 2; width: 42px; height: 42px; padding: 0; border-radius: 15px; background: #ffffffe6; backdrop-filter: blur(6px); font-size: 1.6rem; line-height: 1; }
+.hero-rate { position: absolute; top: 18px; right: 16px; z-index: 2; background: #ffffffe6; backdrop-filter: blur(6px); border-radius: 999px; padding: 6px 12px; font-weight: 800; font-size: .88rem; }
+.hero-rate small { color: var(--muted); }
+.hero-count { position: absolute; bottom: 12px; right: 14px; background: #000a; color: #fff; border-radius: 999px; padding: 4px 10px; font-size: .75rem; font-weight: 700; }
+.sheet-inner { padding: 16px 20px 20px; }
+.sheet-head { text-align: left; padding: 0; }
+.sheet-head h2 { margin: 0; font-size: 1.5rem; line-height: 1.15; font-weight: 800; letter-spacing: -.02em; }
 .sub { margin: 4px 0 10px; color: var(--muted); font-weight: 600; font-size: .9rem; }
-.tags { display: flex; gap: 8px; justify-content: center; }
-.stats3 { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; margin: 18px 0 4px; }
-.stats3 b { display: block; font-size: 1.1rem; font-weight: 800; }
+.tags { display: flex; gap: 8px; }
+.stats3 { display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; margin: 16px 0 4px; padding: 12px 0; background: var(--bg); border-radius: 22px; }
+.stats3 b { display: block; font-size: 1.05rem; font-weight: 800; }
 .stats3 small { font-weight: 600; }
-#sheet img { width: 100%; height: auto; display: block; border-radius: 22px; margin: 10px 0; }
-.desc { color: #5f5e5a; font-size: .9rem; margin: 6px 0 14px; }
+.desc { color: #5f5e5a; font-size: .92rem; margin: 12px 0 16px; }
 .sheet-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.price { background: var(--lime); border-radius: 18px; padding: 12px 18px; font-size: 1.35rem; font-weight: 800; }
-.how { width: auto; display: flex; align-items: center; gap: 8px; padding: 15px 20px; background: var(--ink); color: #fff; border-radius: 18px; }
+.price { background: var(--lime); border-radius: 18px; padding: 12px 18px; font-size: 1.35rem; font-weight: 800; color: #111; }
+.how { width: auto; display: flex; align-items: center; gap: 8px; padding: 15px 20px; background: var(--ink); color: var(--card); border-radius: 18px; }
 
 /* --- Navegación --- */
 #navbar { position: fixed; top: calc(var(--safe-t) + 12px); left: 14px; right: 14px; z-index: 7; display: flex; gap: 14px; align-items: center; background: var(--card); border-radius: 24px; padding: 10px 18px 10px 10px; box-shadow: var(--shadow); }
-.turn-ico { width: 56px; height: 56px; border-radius: 18px; background: var(--sky); display: grid; place-items: center; font-size: 1.9rem; flex: none; }
+.turn-ico { color: #111; width: 56px; height: 56px; border-radius: 18px; background: var(--sky); display: grid; place-items: center; font-size: 1.9rem; flex: none; }
 .turn-txt { font-weight: 800; font-size: 1.05rem; line-height: 1.2; }
 .turn-dist { color: var(--muted); font-weight: 700; font-size: .9rem; }
 body.driveview #navbar { padding: 14px 18px 14px 14px; }
@@ -90,8 +100,8 @@ body.driveview .turn-dist { font-size: 1.5rem; color: var(--ink); }
 .rp-actions button { width: auto; flex: 1; padding: 14px 10px; }
 .rp-actions .grow { flex: 2; }
 .ghost { background: var(--bg); }
-.go { background: var(--ink); color: #fff; flex: 2 !important; }
-.exit { background: #111; color: #fff; flex: 0 0 52px !important; padding: 0 !important; }
+.go { background: var(--ink); color: var(--card); flex: 2 !important; }
+.exit { background: var(--ink); color: var(--card); flex: 0 0 52px !important; padding: 0 !important; }
 body.driveview #routepanel { padding: 12px 14px; border-radius: 26px; }
 body.driveview .rp-info { font-size: 1.3rem; margin: 2px 0 10px; }
 
@@ -187,3 +197,30 @@ body.driveview #compass { top: calc(var(--safe-t) + 190px); }
 #compass svg { transition: transform .2s linear; }
 .turn-bubble { background: #1d4ed8; color: #fff; font-weight: 800; font-size: .85rem; padding: 6px 12px; border-radius: 999px; box-shadow: var(--shadow); white-space: nowrap; border: 2px solid #fff; }
 .turn-bubble b { font-size: 1rem; margin-right: 4px; }
+
+/* --- Fotos en el inicio --- */
+.feat-photo { position: relative; }
+.feat-photo img { width: 100%; display: block; aspect-ratio: 3 / 2; object-fit: cover; background: #e8e3da; }
+.feat-photo::after { content: ''; position: absolute; inset: 0; background: linear-gradient(#0005, transparent 40%); pointer-events: none; }
+.feat-photo .pill { position: absolute; top: 14px; left: 14px; z-index: 1; box-shadow: var(--shadow); }
+.feat-photo .hero-rate { top: 14px; right: 14px; }
+.pcard img { background: #e8e3da; }
+
+/* --- Botón de tema --- */
+#theme2 { position: fixed; right: 14px; top: calc(var(--safe-t) + 206px); z-index: 7; width: 48px; height: 48px; padding: 0; border-radius: 50%; background: var(--card); color: var(--ink); box-shadow: var(--shadow); display: none; place-items: center; }
+body.navigating #theme2 { display: grid; }
+body.driveview #theme2 { top: calc(var(--safe-t) + 246px); }
+
+/* --- Modo noche: la interfaz sobre el mapa se oscurece --- */
+body[data-theme='night'] :is(.hud, .mapctl, #tabbar, #navbar, #routepanel, #street, #speed, #compass, #theme2, #sheet, #alertpanel, .search, .results, .chip) {
+  --card: #171c26; --ink: #f2f4f8; --bg: #232a37; --muted: #9aa5b8; --shadow: 0 8px 24px rgba(0, 0, 0, .5);
+  color: var(--ink);
+}
+body[data-theme='night'] :is(#tabbar button.on) { color: #111; }
+body[data-theme='night'] .lanes { border-top-color: #2b3342; }
+body[data-theme='night'] .desc { color: #b4bccb; }
+body[data-theme='night'] .price, body[data-theme='night'] .pill { color: #111; }
+body[data-theme='night'] #total { text-shadow: 0 0 14px #0c1018, 0 0 4px #0c1018; color: #f2f4f8; }
+body[data-theme='night'] .user-tag { text-shadow: 0 0 6px #000, 0 0 3px #000; color: #fff; }
+body[data-theme='night'] .pin { background: #1c2230; color: #fff; }
+body[data-theme='night'] .pin.nearest { background: #fff; color: #111; }

@@ -6,7 +6,7 @@ import { DeleteCommand, DynamoDBDocumentClient, GetCommand, PutCommand } from '@
 // El mismo generador del cliente: el servidor "conoce" los mismos inmuebles simulados.
 import { SimulatedPropertyProvider } from '../../web/src/properties/generator';
 import { distanceM, formatDistance } from '../../web/src/properties/geo';
-import { TYPE_LABEL, formatPrice } from '../../web/src/properties/format';
+import { TYPE_LABEL, formatPrice, photos } from '../../web/src/properties/format';
 
 const TABLE = process.env.TABLE_NAME!;
 const SUBJECT = 'https://inmuebles.calolomino.dev';
@@ -141,6 +141,7 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
         body: `${p.title} · ${formatPrice(p.price)}`,
         id: p.id,
         tag: `prop-${p.id}`,
+        image: photos(p).hero,
       });
       return json(200, { sent: ok ? 1 : 0, id: p.id });
     }

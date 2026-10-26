@@ -18,3 +18,6 @@ Estado: Fase 1 (PWA instalable + landing + infraestructura). Siguiente: mapa, GP
 - Web Push con VAPID (`infra/lambda/handler.ts`): Lambda con URL pública detrás de CloudFront (`/api/*`), DynamoDB para suscripciones y avisos recientes. Las claves VAPID se generan en el primer uso y se guardan en DynamoDB.
 - Service Worker propio (`web/src/sw.ts`) con `push` y `notificationclick` (abre la ficha del inmueble).
 - Limitación de las PWA: el GPS solo funciona con la app abierta; para alertas con la app cerrada se necesita app nativa.
+
+## Fotos
+Las fotos de `web/public/photos/` son imágenes de stock de Unsplash (licencia libre, sin atribución obligatoria), usadas solo como relleno del demo; se reemplazarán por las fotos reales de cada inmueble.
