@@ -9,11 +9,18 @@
   <title>Inmuebles en Ruta</title>
 </head>
 <body>
-  <main>
-    <h1>Inmuebles en Ruta</h1>
-    <p class="lead">La app está instalada y funcionando. El mapa llega en la Fase 2.</p>
-    <div class="card"><h2>Estado</h2><p id="status">Verificando…</p></div>
-  </main>
+  <div id="map"></div>
+  <div id="gps-banner" class="hidden"></div>
+  <div class="topbar">
+    <div id="count">Buscando inmuebles…</div>
+    <div class="chips">
+      <button class="chip" data-type="casa" style="--c:#22c55e">🏠 Casas</button>
+      <button class="chip" data-type="edificio" style="--c:#3b82f6">🏢 Edificios</button>
+      <button class="chip" data-type="finca" style="--c:#f59e0b">🌳 Fincas</button>
+    </div>
+  </div>
+  <button id="recenter" class="hidden" aria-label="Centrar en mi ubicación">◎</button>
+  <aside id="sheet" aria-live="polite"></aside>
   <script type="module" src="/src/app/main.ts"></script>
 </body>
 </html>

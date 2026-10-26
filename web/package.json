@@ -16,5 +16,8 @@
     "vite": "^8.3.5",
     "vite-plugin-pwa": "^2.0.0",
     "workbox-window": "^7.4.1"
+  },
+  "dependencies": {
+    "maplibre-gl": "^6.16.0"
   }
 }
