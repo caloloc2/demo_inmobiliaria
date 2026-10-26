@@ -41,7 +41,18 @@ export class WebStack extends Stack {
     // Service Worker y manifest nunca deben quedar cacheados, o las actualizaciones no llegan.
     const noCache = cloudfront.CachePolicy.CACHING_DISABLED;
     const bucketOrigin = origins.S3BucketOrigin.withOriginAccessControl(bucket);
+    // S3 + OAC no resuelve directorios: /app/ -> /app/index.html.
+    const indexRewrite = new cloudfront.Function(this, 'IndexRewrite', {
+      runtime: cloudfront.FunctionRuntime.JS_2_0,
+      code: cloudfront.FunctionCode.fromInline(`function handler(event) {
+  var r = event.request;
+  if (r.uri.endsWith('/')) r.uri += 'index.html';
+  else if (r.uri === '/app') return { statusCode: 301, statusDescription: 'Moved Permanently', headers: { location: { value: '/app/' } } };
+  return r;
+}`),
+    });
     const common = {
+      functionAssociations: [{ function: indexRewrite, eventType: cloudfront.FunctionEventType.VIEWER_REQUEST }],
       origin: bucketOrigin,
       viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
       compress: true,
@@ -82,10 +93,9 @@ export class WebStack extends Stack {
         '/sw.js': { ...common, cachePolicy: noCache, responseHeadersPolicy: securityHeaders },
         '/manifest.webmanifest': { ...common, cachePolicy: noCache, responseHeadersPolicy: securityHeaders },
         '/workbox-*.js': { ...common, cachePolicy: noCache, responseHeadersPolicy: securityHeaders },
-        '/app/': { ...common, cachePolicy: noCache, responseHeadersPolicy: securityHeaders },
+        '/app/index.html': { ...common, cachePolicy: noCache, responseHeadersPolicy: securityHeaders },
         '/index.html': { ...common, cachePolicy: noCache, responseHeadersPolicy: securityHeaders },
       },
-      // /app/ -> /app/index.html para que la ruta con barra final funcione en S3 + OAC.
       errorResponses: [
         { httpStatus: 403, responseHttpStatus: 200, responsePagePath: '/index.html', ttl: Duration.seconds(10) },
         { httpStatus: 404, responseHttpStatus: 200, responsePagePath: '/index.html', ttl: Duration.seconds(10) },
