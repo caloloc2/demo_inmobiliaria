@@ -11,7 +11,7 @@ Producción del demo: https://inmuebles.calolomino.dev
 cd web && npm ci && npm run build
 cd ../infra && npm ci && npx cdk deploy
 ```
-Estado: Fases 1 a 5 completas (PWA, mapa y GPS, rutas y conducción 3D, alertas y push, pulido). Guía completa del demo: [`docs/Guia-Demo-Inmuebles-en-Ruta.pdf`](docs/Guia-Demo-Inmuebles-en-Ruta.pdf).
+Estado: Fases 1 a 5 completas (PWA, mapa y GPS, rutas y conducción 3D, alertas y push, pulido). Documentos: propuesta comercial [`docs/Propuesta-Inmuebles-en-Ruta.pdf`](docs/Propuesta-Inmuebles-en-Ruta.pdf) y guía técnica del demo [`docs/Guia-Demo-Inmuebles-en-Ruta.pdf`](docs/Guia-Demo-Inmuebles-en-Ruta.pdf). Contexto para desarrolladores y sesiones nuevas: [`CLAUDE.md`](CLAUDE.md).
 
 ## Fase 4: alertas y push
 - Alertas de cercanía en el cliente (`web/src/app/alerts.ts`): radio configurable, aviso dentro de la app + notificación del sistema.
@@ -23,4 +23,4 @@ Estado: Fases 1 a 5 completas (PWA, mapa y GPS, rutas y conducción 3D, alertas 
 Las fotos de `web/public/photos/` son imágenes de stock de Unsplash (licencia libre, sin atribución obligatoria), usadas solo como relleno del demo; se reemplazarán por las fotos reales de cada inmueble.
 
 ## Guía del demo
-`docs/Guia-Demo-Inmuebles-en-Ruta.pdf` (código fuente en `docs/guia/guia.html`). Para regenerarla: abrir `guia.html` con Chromium/Playwright y exportar a PDF en A4.
+`docs/Guia-Demo-Inmuebles-en-Ruta.pdf` (guía técnica, fuente `docs/guia/guia.html`) y `docs/Propuesta-Inmuebles-en-Ruta.pdf` (propuesta comercial, fuente `docs/guia/propuesta.html`). Para regenerarla: abrir `guia.html` con Chromium/Playwright y exportar a PDF en A4.

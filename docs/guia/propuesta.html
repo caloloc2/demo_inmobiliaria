@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Inmuebles en Ruta · Propuesta</title>
+<style>
+@font-face { font-family: 'Manrope'; src: url('fonts/manrope-latin-wght-normal.woff2') format('woff2'); font-weight: 200 800; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Manrope'; src: url('fonts/manrope-latin-ext-wght-normal.woff2') format('woff2'); font-weight: 200 800; unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@page { size: A4; margin: 0; }
+:root { --ink: #111; --muted: #6f6d68; --sky: #8fd3fa; --lime: #dcf28f; --sun: #fde68a; --bg: #f4f1ec; }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font: 500 10.5pt/1.5 'Manrope', sans-serif; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.page { width: 210mm; height: 297mm; padding: 20mm 18mm; position: relative; overflow: hidden; break-after: page; background: var(--bg); }
+.page:last-child { break-after: auto; }
+h1 { font-size: 34pt; line-height: 1.05; letter-spacing: -.03em; margin: 0 0 5mm; font-weight: 800; }
+h2 { font-size: 24pt; line-height: 1.1; letter-spacing: -.02em; margin: 0 0 4mm; font-weight: 800; }
+h3 { font-size: 12.5pt; margin: 0 0 1.5mm; font-weight: 800; }
+p { margin: 0 0 3mm; }
+.eyebrow { display: inline-block; background: var(--lime); border-radius: 99px; padding: 1mm 4mm; font-weight: 800; font-size: 8.5pt; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 4mm; }
+.eyebrow.sky { background: var(--sky); } .eyebrow.sun { background: var(--sun); }
+.lead { font-size: 13pt; color: #3f3d39; max-width: 135mm; }
+.muted { color: var(--muted); }
+.blob { position: absolute; border-radius: 50%; z-index: 0; }
+.page > *:not(.blob):not([style*="absolute"]):not(.phones):not(.foot) { position: relative; z-index: 1; }
+.phone { border: 1.7mm solid #111; border-radius: 8mm; overflow: hidden; background: #111; box-shadow: 0 4mm 10mm rgba(30, 24, 10, .28); }
+.phone img { width: 100%; display: block; }
+.logo { width: 22mm; height: 22mm; border-radius: 5.5mm; box-shadow: 0 2mm 6mm rgba(30, 24, 10, .2); }
+
+/* portada */
+.cover { background: linear-gradient(160deg, #f4f1ec 55%, #e6f4fc); }
+.cover .phones { position: absolute; left: 0; right: 0; bottom: 22mm; height: 142mm; z-index: 1; }
+.cover .phones .phone { position: absolute; width: 56mm; }
+.cover .p1 { left: 22mm; bottom: 0; transform: rotate(-6deg); } .cover .p2 { left: 76mm; bottom: 12mm; width: 62mm !important; z-index: 2; } .cover .p3 { right: 18mm; bottom: 0; transform: rotate(6deg); }
+.cover .foot { position: absolute; left: 18mm; right: 18mm; bottom: 9mm; display: flex; justify-content: space-between; font-size: 8.5pt; color: var(--muted); z-index: 3; }
+.cover h1 { font-size: 40pt; margin-top: 8mm; max-width: 150mm; }
+
+/* tarjetas */
+.cards { display: grid; gap: 5mm; }
+.cards.c3 { grid-template-columns: repeat(3, 1fr); } .cards.c2 { grid-template-columns: repeat(2, 1fr); }
+.card { background: #fff; border-radius: 6mm; padding: 5mm; box-shadow: 0 1.5mm 5mm rgba(30, 24, 10, .08); }
+.card .ico { width: 11mm; height: 11mm; border-radius: 3.5mm; display: grid; place-items: center; font-size: 15pt; margin-bottom: 3mm; background: var(--sky); }
+.card .ico.l { background: var(--lime); } .card .ico.s { background: var(--sun); }
+.card p { font-size: 9.5pt; color: #4a4843; margin: 0; }
+.compact .card { padding: 3.6mm 4mm; } .compact .ico { width: 9mm; height: 9mm; margin-bottom: 2mm; font-size: 12pt; } .compact h3 { font-size: 11pt; } .compact p { font-size: 8.8pt; }
+.big { font-size: 17pt; line-height: 1.25; font-weight: 800; letter-spacing: -.01em; }
+.quote { background: var(--ink); color: #fff; border-radius: 7mm; padding: 8mm 9mm; margin: 8mm 0; }
+.quote .big { color: #fff; } .quote em { font-style: normal; color: var(--lime); }
+
+/* pasos */
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5mm; margin-top: 8mm; }
+.step .num { width: 9mm; height: 9mm; border-radius: 50%; background: var(--ink); color: #fff; font-weight: 800; display: grid; place-items: center; margin-bottom: 3mm; }
+.step .phone { margin-bottom: 3.5mm; }
+.step p { font-size: 9.2pt; color: #4a4843; }
+
+/* beneficios */
+.ben { background: #fff; border-radius: 7mm; padding: 6mm 7mm; margin-bottom: 5mm; display: flex; gap: 6mm; align-items: flex-start; box-shadow: 0 1.5mm 5mm rgba(30, 24, 10, .08); }
+.ben .tag { flex: none; width: 36mm; }
+.ben ul { margin: 0; padding-left: 4.5mm; flex: 1; } .ben li { margin-bottom: 1.6mm; font-size: 10pt; }
+.brand { background: var(--sky); border-radius: 7mm; padding: 6mm 8mm; display: flex; gap: 6mm; align-items: center; }
+.chips { display: flex; flex-wrap: wrap; gap: 2.5mm; margin: 4mm 0; }
+.chip { background: #fff; border-radius: 99px; padding: 2mm 4.5mm; font-weight: 800; font-size: 9.5pt; box-shadow: 0 1mm 3mm rgba(30, 24, 10, .1); }
+
+/* instalación */
+.install { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+.install ol { margin: 0; padding-left: 5mm; } .install li { margin-bottom: 1.8mm; }
+
+/* hoja de ruta */
+.road { position: relative; margin: 6mm 0 0 6mm; padding-left: 10mm; border-left: 2.5mm solid var(--ink); }
+.stage { position: relative; margin-bottom: 6mm; }
+.stage::before { content: ''; position: absolute; left: -15.2mm; top: 1.5mm; width: 6mm; height: 6mm; border-radius: 50%; background: var(--sky); border: 1.5mm solid var(--ink); }
+.stage.done::before { background: var(--lime); }
+.stage .when { font-size: 8.5pt; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.stage p { font-size: 9.8pt; color: #4a4843; margin: 0; }
+.cta { background: var(--ink); color: #fff; border-radius: 8mm; padding: 8mm 9mm; display: flex; gap: 8mm; align-items: center; margin-top: 6mm; }
+.cta img { width: 34mm; height: 34mm; border-radius: 4mm; background: #fff; padding: 1.5mm; }
+.cta h3 { font-size: 17pt; margin-bottom: 2mm; } .cta p { color: #d7d4cd; margin: 0 0 2mm; } .cta b { color: var(--lime); }
+.small { font-size: 8pt; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- 1 · PORTADA -->
+<div class="page cover">
+  <div class="blob" style="width:150mm;height:150mm;background:var(--sky);opacity:.35;right:-55mm;top:-40mm"></div>
+  <div class="blob" style="width:90mm;height:90mm;background:var(--lime);opacity:.5;left:-35mm;bottom:70mm"></div>
+  <img class="logo" src="../../web/public/icon.svg" alt="" />
+  <p style="margin-top:8mm"><span class="eyebrow">Propuesta · Demostración funcional</span></p>
+  <h1>Encuentra tu próximo hogar mientras te mueves</h1>
+  <p class="lead">Una aplicación que muestra y avisa los inmuebles en venta que van apareciendo en tu camino, en auto o a pie.</p>
+  <div class="phones">
+    <div class="phone p1"><img src="img/home.jpg" alt="" /></div>
+    <div class="phone p2"><img src="img/nav-day.jpg" alt="" /></div>
+    <div class="phone p3"><img src="img/nav-night.jpg" alt="" /></div>
+  </div>
+  <div class="foot"><span>Pruébala ahora: <b style="color:var(--ink)">inmuebles.calolomino.dev</b></span><span>Una solución de calolomino.dev</span></div>
+</div>
+
+<!-- 2 · LA IDEA -->
+<div class="page">
+  <div class="blob" style="width:90mm;height:90mm;background:var(--sun);opacity:.55;right:-30mm;top:-25mm"></div>
+  <span class="eyebrow sky">La idea</span>
+  <h2>Que los inmuebles encuentren al comprador, no al revés</h2>
+  <p class="lead">Muchas veces el interés por una casa, un edificio o una finca nace al pasar frente a ellos. <b>Inmuebles en Ruta</b> convierte cada trayecto en una oportunidad de venta.</p>
+  <div class="quote">
+    <p class="big">Es como <em>Waze</em> o <em>Google Maps</em>, pero en cada calle te muestra qué inmuebles de tu empresa están en venta cerca de ti.</p>
+  </div>
+  <div class="cards c3">
+    <div class="card"><div class="ico">🗺️</div><h3>Descubre en el camino</h3><p>El mapa muestra, con su precio, los inmuebles en venta que van apareciendo a tu alrededor.</p></div>
+    <div class="card"><div class="ico l">🔔</div><h3>Te avisa al pasar cerca</h3><p>Una notificación te invita a conocer el inmueble justo cuando estás a pocos metros.</p></div>
+    <div class="card"><div class="ico s">📍</div><h3>De la calle a la ficha</h3><p>Fotos, precio y datos en un toque, y la ruta para llegar lista para empezar.</p></div>
+  </div>
+  <div class="phone" style="width:42mm;position:absolute;right:24mm;bottom:12mm;transform:rotate(4deg)"><img src="img/map.jpg" alt="" /></div>
+  <div style="position:absolute;left:18mm;bottom:30mm;width:100mm">
+    <h3>Pensada para vender</h3>
+    <p class="muted" style="font-size:10pt">Cada trayecto de un cliente potencial es una oportunidad de mostrarle justo lo que busca, en el momento y el lugar en que más sentido tiene.</p>
+  </div>
+</div>
+
+<!-- 3 · CÓMO FUNCIONA -->
+<div class="page">
+  <span class="eyebrow">Cómo funciona</span>
+  <h2>Del primer vistazo a la puerta del inmueble, en cuatro pasos</h2>
+  <p class="lead">Sencillo para quien la usa, sin manuales ni registros complicados.</p>
+  <div class="steps">
+    <div class="step"><div class="num">1</div><div class="phone"><img src="img/home.jpg" alt="" /></div><h3>Descubre</h3><p>Al abrir la app, un saludo y los mejores inmuebles cerca de ti, filtrados por casas, edificios o fincas.</p></div>
+    <div class="step"><div class="num">2</div><div class="phone"><img src="img/map.jpg" alt="" /></div><h3>Explora</h3><p>En el mapa ves tu ubicación y cada inmueble con su precio. El más cercano aparece destacado.</p></div>
+    <div class="step"><div class="num">3</div><div class="phone"><img src="img/sheet.jpg" alt="" /></div><h3>Conoce</h3><p>Galería de fotos, precio, área, habitaciones, distancia y calificación en una sola ficha.</p></div>
+    <div class="step"><div class="num">4</div><div class="phone"><img src="img/nav-day.jpg" alt="" /></div><h3>Llega</h3><p>Navegación en auto o a pie, con vista 3D, giros guiados y avisos de otros inmuebles en el camino.</p></div>
+  </div>
+  <div class="cards c2" style="margin-top:12mm">
+    <div class="card"><div class="ico">⚡</div><h3>Demostración en vivo</h3><p>Con un solo toque, la app “conduce” una ruta por sí sola para presentar toda la experiencia en una reunión, sin salir a la calle.</p></div>
+    <div class="card"><div class="ico l">🌙</div><h3>De día y de noche</h3><p>Modo noche con mapa oscuro y ruta luminosa: cómodo y elegante a cualquier hora del día.</p></div>
+  </div>
+  <p class="small" style="position:absolute;left:18mm;bottom:12mm">Demostración con datos de ejemplo: los inmuebles, precios y fotos mostrados son ilustrativos.</p>
+</div>
+
+<!-- 4 · FUNCIONES -->
+<div class="page">
+  <div class="blob" style="width:120mm;height:120mm;background:var(--lime);opacity:.45;left:-50mm;bottom:-40mm"></div>
+  <span class="eyebrow sun">Experiencia</span>
+  <h2>Funciones que se sienten como una app de primera línea</h2>
+  <div style="display:flex;gap:9mm;margin-top:6mm">
+    <div class="cards c2 compact" style="flex:1;align-content:start;gap:4mm">
+      <div class="card"><div class="ico">🏠</div><h3>Mapa con precios</h3><p>Cada inmueble, con su tipo y valor a la vista.</p></div>
+      <div class="card"><div class="ico l">🚗</div><h3>Navegación 3D</h3><p>Cámara que sigue tu rumbo, próximo giro y calle actual.</p></div>
+      <div class="card"><div class="ico s">🔔</div><h3>Avisos de cercanía</h3><p>Tú eliges el radio: desde 200 m hasta 1 km.</p></div>
+      <div class="card"><div class="ico">📷</div><h3>Fichas con fotos</h3><p>Galería deslizable y datos clave en un toque.</p></div>
+      <div class="card"><div class="ico l">🚶</div><h3>En auto o a pie</h3><p>Rutas con tiempo y distancia para cada modo.</p></div>
+      <div class="card"><div class="ico s">🔎</div><h3>Búsqueda y filtros</h3><p>Por tipo, calle o precio, al instante.</p></div>
+      <div class="card"><div class="ico">⭐</div><h3>Los mejores primero</h3><p>Destacados por calificación y cercanía.</p></div>
+      <div class="card"><div class="ico l">🌙</div><h3>Modo noche</h3><p>Automático al anochecer, o cuando tú quieras.</p></div>
+    </div>
+    <div class="phone" style="width:62mm;flex:none;align-self:flex-start;margin-top:2mm"><img src="img/nav-night.jpg" alt="" /></div>
+  </div>
+  <div class="quote" style="margin-top:7mm;padding:6mm 8mm"><p class="big" style="margin:0;font-size:15pt">Cada detalle está pensado para que el cliente quiera <em>seguir explorando</em>.</p></div>
+  <div style="display:flex;gap:8mm;justify-content:center;margin-top:7mm">
+    <div class="phone" style="width:34mm"><img src="img/home-list.jpg" alt="" /></div>
+    <div class="phone" style="width:34mm"><img src="img/sheet.jpg" alt="" /></div>
+    <div class="phone" style="width:34mm"><img src="img/route.jpg" alt="" /></div>
+    <div class="phone" style="width:34mm"><img src="img/alerts.jpg" alt="" /></div>
+  </div>
+</div>
+
+<!-- 5 · BENEFICIOS -->
+<div class="page">
+  <span class="eyebrow">Beneficios</span>
+  <h2>Valor para todos los que participan</h2>
+  <div class="ben"><div class="tag"><span class="eyebrow sky" style="margin:0">Compradores</span><h3 style="margin-top:3mm">Encuentran sin buscar</h3></div>
+    <ul><li>Descubren opciones que no sabían que existían, justo donde están.</li><li>Deciden mejor con fotos y datos al instante.</li><li>Llegan al inmueble con la ruta lista, en auto o a pie.</li><li>Reciben avisos solo de lo que les interesa y en el radio que prefieren.</li></ul></div>
+  <div class="ben"><div class="tag"><span class="eyebrow" style="margin:0">Empresa y asesores</span><h3 style="margin-top:3mm">Más visibilidad, mejor marca</h3></div>
+    <ul><li>Cada inmueble se muestra donde más importa: a quien pasa cerca de él.</li><li>Un canal propio y moderno que diferencia a la empresa de la competencia.</li><li>Clientes con intención real: alguien que se acerca físicamente a un inmueble.</li><li>Visitas más fáciles de concretar, con la ruta integrada.</li><li>Base para entender qué zonas y tipos de inmueble generan más interés.</li></ul></div>
+  <div class="ben"><div class="tag"><span class="eyebrow sun" style="margin:0">Propietarios</span><h3 style="margin-top:3mm">Su inmueble, siempre visible</h3></div>
+    <ul><li>Su propiedad aparece en el mapa de cada persona que pasa cerca.</li><li>Una ficha profesional con galería de fotos y datos completos.</li></ul></div>
+  <div class="brand">
+    <div style="flex:1"><h3 style="font-size:14pt">Tu marca, de principio a fin</h3><p style="margin:0;font-size:10pt">Nombre, logo, colores y dirección web propios: el cliente la reconoce como parte de tu empresa desde el primer toque.</p></div>
+    <div class="phone" style="width:26mm;flex:none;margin-bottom:-14mm"><img src="img/landing-android.jpg" alt="" /></div>
+  </div>
+</div>
+
+<!-- 6 · INSTALACIÓN -->
+<div class="page">
+  <div class="blob" style="width:110mm;height:110mm;background:var(--sky);opacity:.35;right:-40mm;top:-30mm"></div>
+  <span class="eyebrow sky">Instalación</span>
+  <h2>En tus clientes, en menos de un minuto</h2>
+  <p class="lead">Sin tiendas de aplicaciones, sin esperas de aprobación y sin descargas pesadas. Se comparte con un enlace o un código QR.</p>
+  <div class="chips">
+    <span class="chip">✓ Android y iPhone</span><span class="chip">✓ Sin pasar por tiendas</span><span class="chip">✓ Se actualiza sola</span><span class="chip">✓ Ocupa muy poco espacio</span><span class="chip">✓ Un solo desarrollo para todos</span>
+  </div>
+  <div class="install" style="margin-top:6mm">
+    <div class="card"><span class="eyebrow" style="margin-bottom:3mm">Android</span>
+      <ol><li>Abre el enlace en Chrome.</li><li>Toca <b>Instalar app</b>.</li><li>Listo: el icono queda en la pantalla de inicio.</li></ol>
+      <div class="phone" style="width:46mm;margin:5mm auto 0"><img src="img/landing-android.jpg" alt="" /></div></div>
+    <div class="card"><span class="eyebrow sky" style="margin-bottom:3mm">iPhone</span>
+      <ol><li>Abre el enlace en Safari.</li><li>Toca <b>Compartir</b> y luego <b>Agregar a inicio</b>.</li><li>Listo: se abre a pantalla completa, como cualquier app.</li></ol>
+      <div class="phone" style="width:46mm;margin:5mm auto 0"><img src="img/landing-ios.jpg" alt="" /></div></div>
+  </div>
+  <div class="quote" style="margin-top:8mm"><p class="big" style="margin:0">Lanzar o mejorar la app es tan rápido como <em>publicar una actualización</em>: tus clientes siempre ven la última versión.</p></div>
+</div>
+
+<!-- 7 · CRECIMIENTO + CIERRE -->
+<div class="page">
+  <span class="eyebrow">Hacia dónde crecemos</span>
+  <h2>Una base lista para convertirse en tu plataforma comercial</h2>
+  <div class="road">
+    <div class="stage done"><div class="when">Etapa 1 · Ya disponible</div><h3>Demostración funcional</h3><p>Mapa, navegación 3D, avisos de cercanía, fichas con fotos e instalación en Android y iPhone, lista para presentar.</p></div>
+    <div class="stage"><div class="when">Etapa 2</div><h3>Tu catálogo real</h3><p>Tus inmuebles con sus fotos y precios, y un panel sencillo para que tu equipo los cargue y actualice.</p></div>
+    <div class="stage"><div class="when">Etapa 3</div><h3>Experiencia comercial</h3><p>Cuentas de usuario, favoritos, contacto directo con el asesor por llamada o WhatsApp y agenda de visitas.</p></div>
+    <div class="stage"><div class="when">Etapa 4</div><h3>Avisos aun con el teléfono bloqueado</h3><p>Una versión para las tiendas de aplicaciones que avisa de los inmuebles cercanos incluso con la pantalla apagada.</p></div>
+  </div>
+  <div class="cta">
+    <img src="img/qr.png" alt="Código QR" />
+    <div>
+      <h3>Pruébala ahora en tu teléfono</h3>
+      <p>Escanea el código o entra a <b>inmuebles.calolomino.dev</b>, instálala y toca <b>▶ Demo</b> para ver la experiencia completa.</p>
+      <p style="margin:0">Agendemos una reunión para definir tu catálogo, tu marca y el lanzamiento.</p>
+    </div>
+  </div>
+  <p class="small" style="margin-top:6mm">Demostración con datos de ejemplo. Una solución de calolomino.dev.</p>
+</div>
+
+</body>
+</html>
