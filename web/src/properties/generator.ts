@@ -80,6 +80,13 @@ export class SimulatedPropertyProvider implements PropertyProvider {
     return list;
   }
 
+  /** Recupera un inmueble por id (los ids simulados codifican su celda: `sim-<ix>-<iy>-<i>`). */
+  get(id: string): Property | undefined {
+    const m = /^sim-(-?\d+)-(-?\d+)-(\d+)$/.exec(id);
+    if (!m) return undefined;
+    return this.cell(Number(m[1]), Number(m[2]))[Number(m[3])];
+  }
+
   nearby(center: LatLng, radiusM: number): Property[] {
     const span = Math.ceil(radiusM / 111000 / CELL) + 1;
     const cx = Math.floor(center.lng / CELL);

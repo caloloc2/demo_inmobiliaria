@@ -8,12 +8,18 @@
     "deploy": "cdk deploy --require-approval never"
   },
   "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1157.0",
+    "@aws-sdk/lib-dynamodb": "^3.1157.0",
     "aws-cdk-lib": "^2.275.0",
-    "constructs": "^10.8.1"
+    "constructs": "^10.8.1",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@types/aws-lambda": "^8.10.164",
     "@types/node": "^26.6.5",
+    "@types/web-push": "^3.6.4",
     "aws-cdk": "^2.1146.1",
+    "esbuild": "^0.28.2",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }

@@ -14,11 +14,13 @@ export default defineConfig({
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
-      workbox: {
-        navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/app\//],
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
       manifest: {
         name: 'Inmuebles en Ruta',

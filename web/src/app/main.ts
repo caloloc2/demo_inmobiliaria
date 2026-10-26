@@ -4,7 +4,10 @@ import './app.css';
 import * as maplibregl from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import { DEFAULT_LOCATION, watchGps, type Fix, type GpsStatus } from './gps';
+import { registerSW } from 'virtual:pwa-register';
+import { createAlerts, RADII } from './alerts';
 import { createNavigation } from './navigation';
+import { disablePush, enablePush, pushState, reportPosition, sendTestPush, type PushState } from './push';
 import { SimulatedPropertyProvider } from '../properties/generator';
 import { distanceM, formatDistance } from '../properties/geo';
 import { TYPE_COLOR, TYPE_LABEL, TYPE_PLURAL, formatPrice, illustration, typeIcon } from '../properties/format';
@@ -13,6 +16,7 @@ import type { LatLng, Property, PropertyType } from '../properties/types';
 const SEARCH_RADIUS_M = 2000;
 const TYPES: PropertyType[] = ['casa', 'edificio', 'finca'];
 
+registerSW({ immediate: true });
 maplibregl.setWorkerUrl(workerUrl);
 const provider = new SimulatedPropertyProvider();
 
@@ -73,6 +77,8 @@ userEl.innerHTML = '<div class="user-halo"></div><div class="user-core"><svg wid
 const userMarker = new maplibregl.Marker({ element: userEl, rotationAlignment: 'map' });
 const userArrow = userEl.querySelector<HTMLElement>('.user-core')!;
 
+const alerts = createAlerts(provider, (p, d) => showToast(p, d));
+
 function onFix(f: Fix) {
   user = f;
   userMarker.setLngLat([f.lng, f.lat]);
@@ -80,6 +86,8 @@ function onFix(f: Fix) {
   if (f.heading != null) userArrow.style.transform = `rotate(${f.heading - map.getBearing()}deg)`;
   refreshProperties(f);
   updateNearest();
+  alerts.check(f);
+  if (alerts.settings.enabled) void reportPosition(f, alerts.settings.radiusM);
   if (nav.navigating) nav.feed(f);
   else if (follow && !nav.active) map.easeTo({ center: [f.lng, f.lat], duration: 600 });
   if (sheetProperty) renderSheet(sheetProperty);
@@ -97,11 +105,13 @@ const nav = createNavigation({
     document.body.classList.toggle('routing', active);
     if (active) closeSheet();
     else {
+      alerts.setDestination(null);
       follow = true;
       recenterBtn.classList.add('hidden');
     }
   },
   onSimFix: (f) => onFix(f),
+  onSimStart: () => alerts.reset(),
 });
 
 // --- Inmuebles en el mapa ---
@@ -244,17 +254,108 @@ function renderSheet(p: Property) {
     <p class="desc">${p.description}</p>
     <div class="sheet-foot"><span class="price">${formatPrice(p.price)}</span><button class="how" id="go">Cómo llegar <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>`;
   sheet.querySelector('.sheet-close')!.addEventListener('click', closeSheet);
-  sheet.querySelector('#go')!.addEventListener('click', () => void nav.preview(p));
+  sheet.querySelector('#go')!.addEventListener('click', () => {
+    alerts.setDestination(p.id);
+    void nav.preview(p);
+  });
 }
 
 map.on('click', () => {
   closeSheet();
+  closeAlertPanel();
   resultsEl.classList.add('hidden');
 });
 map.on('dragstart', () => {
   if (nav.active) return;
   follow = false;
   recenterBtn.classList.remove('hidden');
+});
+
+// --- Aviso de cercanía dentro de la app ---
+const toastEl = $('toast');
+let toastTimer: number | undefined;
+function showToast(p: Property, distM: number) {
+  toastEl.innerHTML = `<span class="toast-ico" style="color:${TYPE_COLOR[p.type]}">${typeIcon(p.type, 24)}</span><div><b>${TYPE_LABEL[p.type]} en venta a ${formatDistance(distM)}</b><small>${p.title} · ${formatPrice(p.price)}</small></div><span class="toast-go">Ver</span>`;
+  toastEl.classList.remove('hidden');
+  toastEl.onclick = () => {
+    toastEl.classList.add('hidden');
+    openSheet(p);
+  };
+  navigator.vibrate?.([120, 60, 120]);
+  window.clearTimeout(toastTimer);
+  toastTimer = window.setTimeout(() => toastEl.classList.add('hidden'), 9000);
+}
+
+// --- Panel de alertas ---
+const alertPanel = $('alertpanel');
+$('bell').addEventListener('click', (e) => {
+  e.preventDefault();
+  void renderAlertPanel();
+  alertPanel.classList.add('open');
+});
+function closeAlertPanel() {
+  alertPanel.classList.remove('open');
+}
+
+async function renderAlertPanel(note = '') {
+  const st: PushState = await pushState();
+  const s = alerts.settings;
+  const pushBlock: Record<PushState, string> = {
+    unsupported: '<p class="hint">Este navegador no soporta notificaciones push. Las alertas se muestran dentro de la app.</p>',
+    'needs-install': '<p class="hint">En iPhone, instala la app: <b>Compartir → Agregar a inicio</b> y ábrela desde su icono. Después podrás activar las notificaciones.</p>',
+    denied: '<p class="hint">Las notificaciones están bloqueadas. Actívalas en los ajustes del sitio en tu navegador.</p>',
+    off: '<button class="go" data-a="enable">Activar notificaciones</button>',
+    on: '<p class="hint ok">✓ Notificaciones activas en este dispositivo</p><div class="rp-actions"><button class="ghost" data-a="test">Enviar prueba</button><button class="ghost" data-a="disable">Desactivar</button></div>',
+  };
+  alertPanel.innerHTML = `
+    <button class="sheet-close" data-a="close" aria-label="Cerrar">‹</button>
+    <div class="sheet-head"><h2>Alertas de cercanía</h2><p class="sub">Te avisamos cuando pases cerca de un inmueble en venta</p></div>
+    <button class="switch ${s.enabled ? 'on' : ''}" data-a="toggle" role="switch" aria-checked="${s.enabled}"><span>Avisarme</span><i></i></button>
+    <p class="label">Radio de aviso</p>
+    <div class="modes">${RADII.map((r) => `<button class="mode ${r === s.radiusM ? 'on' : ''}" data-r="${r}">${r >= 1000 ? r / 1000 + ' km' : r + ' m'}</button>`).join('')}</div>
+    <p class="label">Notificaciones push</p>
+    ${pushBlock[st]}
+    ${note ? `<p class="hint ok">${note}</p>` : ''}`;
+}
+
+alertPanel.addEventListener('click', async (e) => {
+  const el = (e.target as HTMLElement).closest<HTMLElement>('button');
+  if (!el) return;
+  const r = el.dataset.r;
+  if (r) {
+    alerts.update({ radiusM: Number(r) });
+    alerts.reset();
+    return void renderAlertPanel();
+  }
+  switch (el.dataset.a) {
+    case 'close': return closeAlertPanel();
+    case 'toggle':
+      alerts.update({ enabled: !alerts.settings.enabled });
+      return void renderAlertPanel();
+    case 'enable':
+      try {
+        await enablePush();
+        return void renderAlertPanel('Listo: te avisaremos aunque la app esté en segundo plano.');
+      } catch {
+        return void renderAlertPanel('No se pudo activar. Revisa tu conexión e inténtalo de nuevo.');
+      }
+    case 'disable':
+      await disablePush();
+      return void renderAlertPanel();
+    case 'test': {
+      const ok = await sendTestPush().catch(() => false);
+      return void renderAlertPanel(ok ? 'Prueba enviada: debería llegarte en unos segundos.' : 'No se pudo enviar la prueba.');
+    }
+  }
+});
+
+// --- Abrir un inmueble desde una notificación ---
+function openById(id: string) {
+  const p = provider.get(id);
+  if (p) openSheet(p);
+}
+navigator.serviceWorker?.addEventListener('message', (e) => {
+  if (e.data?.type === 'open-property') openById(e.data.id);
 });
 
 // --- Controles del mapa ---
@@ -271,6 +372,12 @@ recenterBtn.addEventListener('click', () => {
 map.on('load', () => {
   if (!user) refreshProperties(DEFAULT_LOCATION);
 });
+
+const deepLink = new URLSearchParams(location.search).get('p');
+if (deepLink) {
+  history.replaceState(null, '', '/app/');
+  map.once('load', () => openById(deepLink));
+}
 
 let firstFix = true;
 watchGps(

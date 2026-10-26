@@ -22,4 +22,5 @@ export interface Property extends LatLng {
 export interface PropertyProvider {
   /** Inmuebles en venta dentro de `radiusM` metros de `center`. */
   nearby(center: LatLng, radiusM: number): Property[];
+  get(id: string): Property | undefined;
 }

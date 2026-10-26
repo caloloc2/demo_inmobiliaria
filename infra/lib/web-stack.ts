@@ -8,6 +8,11 @@ import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
+import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as nodejs from 'aws-cdk-lib/aws-lambda-nodejs';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as logs from 'aws-cdk-lib/aws-logs';
 
 export interface WebStackProps extends StackProps {
   rootDomain: string;
@@ -78,6 +83,32 @@ export class WebStack extends Stack {
       },
     });
 
+    // --- Push: suscripciones + claves VAPID + avisos recientes (con TTL) ---
+    const table = new dynamodb.Table(this, 'PushTable', {
+      partitionKey: { name: 'pk', type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      timeToLiveAttribute: 'ttl',
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+    const api = new nodejs.NodejsFunction(this, 'ApiFn', {
+      entry: path.join(__dirname, '../lambda/handler.ts'),
+      runtime: lambda.Runtime.NODEJS_22_X,
+      architecture: lambda.Architecture.ARM_64,
+      memorySize: 256,
+      timeout: Duration.seconds(15),
+      environment: { TABLE_NAME: table.tableName },
+      logGroup: new logs.LogGroup(this, 'ApiLogs', { retention: logs.RetentionDays.ONE_MONTH, removalPolicy: RemovalPolicy.DESTROY }),
+      bundling: { minify: true, target: 'node22', externalModules: [] },
+    });
+    table.grantReadWriteData(api);
+    const apiUrl = api.addFunctionUrl({ authType: lambda.FunctionUrlAuthType.NONE });
+    // Desde 2025 las URL públicas también exigen lambda:InvokeFunction.
+    api.addPermission('PublicInvokeViaUrl', {
+      principal: new iam.AnyPrincipal(),
+      action: 'lambda:InvokeFunction',
+      invokedViaFunctionUrl: true,
+    });
+
     const distribution = new cloudfront.Distribution(this, 'Cdn', {
       domainNames: [domain],
       certificate,
@@ -94,6 +125,14 @@ export class WebStack extends Stack {
         '/manifest.webmanifest': { ...common, cachePolicy: noCache, responseHeadersPolicy: securityHeaders },
         '/workbox-*.js': { ...common, cachePolicy: noCache, responseHeadersPolicy: securityHeaders },
         '/app/index.html': { ...common, cachePolicy: noCache, responseHeadersPolicy: securityHeaders },
+        // Misma origin que la web: sin CORS ni URL fija en el cliente.
+        '/api/*': {
+          origin: new origins.FunctionUrlOrigin(apiUrl),
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.HTTPS_ONLY,
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          cachePolicy: noCache,
+          originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+        },
         '/index.html': { ...common, cachePolicy: noCache, responseHeadersPolicy: securityHeaders },
       },
       errorResponses: [

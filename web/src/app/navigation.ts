@@ -19,6 +19,8 @@ export interface NavDeps {
   onActiveChange(active: boolean): void;
   /** Mueve el marcador del usuario (lo usa el simulador). */
   onSimFix(f: Fix): void;
+  /** Se llama al iniciar una simulación (para volver a permitir las alertas de cercanía). */
+  onSimStart?(): void;
 }
 
 const SIM_SPEEDS: Record<Mode, number[]> = { driving: [12, 25, 40], foot: [3, 6, 12] };
@@ -206,6 +208,7 @@ export function createNavigation(deps: NavDeps) {
       sim = null;
     } else {
       sim = new Simulator(route, (f) => deps.onSimFix(f), () => ((sim = null), renderPanel()), SIM_SPEEDS[mode][simSpeedIdx]);
+      deps.onSimStart?.();
       sim.start();
     }
     renderPanel();
@@ -303,7 +306,7 @@ export function createNavigation(deps: NavDeps) {
     const modes = (['driving', 'foot'] as Mode[])
       .map((m) => `<button class="mode ${m === mode ? 'on' : ''}" data-mode="${m}">${m === 'driving' ? '🚗 Auto' : '🚶 A pie'}</button>`)
       .join('');
-    const info = route ? `${route.approximate ? '≈ ' : ''}${formatDuration(route.duration)} <span>· ${formatDistance(route.distance)}</span>` : message ?? '';
+    const info = arrived ? 'Llegaste' : route ? `${route.approximate ? '≈ ' : ''}${formatDuration(route.duration)} <span>· ${formatDistance(route.distance)}</span>` : message ?? '';
     const head = `<div class="rp-dest"><span class="rp-ico" style="color:var(--${dest.type})">${typeIcon(dest.type, 20)}</span><div><b>${dest.title}</b><small>${TYPE_LABEL[dest.type]} · ${formatPrice(dest.price)}</small></div></div>`;
     const note = route?.approximate ? '<small class="note">Ruta aproximada: el servicio de rutas no respondió.</small>' : '';
 
