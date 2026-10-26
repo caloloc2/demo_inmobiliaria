@@ -11,6 +11,8 @@ import { TYPE_LABEL, formatPrice, photos } from '../../web/src/properties/format
 const TABLE = process.env.TABLE_NAME!;
 const SUBJECT = 'https://inmuebles.calolomino.dev';
 const DAY = 24 * 3600;
+const ALLOWED_ORIGIN = /^https:\/\/inmuebles\.calolomino\.dev$|^http:\/\/localhost(:\d+)?$/;
+const MAX_BODY = 8 * 1024;
 
 const db = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 const provider = new SimulatedPropertyProvider();
@@ -86,6 +88,9 @@ export const handler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
   const path = event.rawPath.replace(/\/+$/, '');
   let body: Record<string, unknown> = {};
   if (method === 'POST') {
+    // La app y la API comparten dominio: solo se aceptan escrituras que vengan de la propia app.
+    if (!ALLOWED_ORIGIN.test(event.headers?.origin ?? '')) return json(400, { error: 'Origen no permitido' });
+    if ((event.body?.length ?? 0) > MAX_BODY) return json(400, { error: 'Solicitud demasiado grande' });
     try {
       body = JSON.parse(event.isBase64Encoded ? Buffer.from(event.body ?? '', 'base64').toString() : (event.body ?? '{}'));
     } catch {

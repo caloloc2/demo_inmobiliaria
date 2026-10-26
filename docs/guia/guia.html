@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>Guía del demo · Inmuebles en Ruta</title>
+<style>
+@font-face { font-family: 'Manrope'; src: url('fonts/manrope-latin-wght-normal.woff2') format('woff2'); font-weight: 200 800; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Manrope'; src: url('fonts/manrope-latin-ext-wght-normal.woff2') format('woff2'); font-weight: 200 800; unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@page { size: A4; margin: 18mm 16mm 20mm; }
+:root { --ink: #111; --muted: #6f6d68; --sky: #8fd3fa; --lime: #dcf28f; --sun: #fde68a; --bg: #f4f1ec; }
+* { box-sizing: border-box; }
+body { font: 500 10pt/1.45 'Manrope', sans-serif; color: var(--ink); margin: 0; }
+h1 { font-size: 26pt; line-height: 1.1; letter-spacing: -.02em; margin: 0 0 6mm; font-weight: 800; }
+h2 { font-size: 16pt; letter-spacing: -.01em; margin: 0 0 4mm; font-weight: 800; padding-top: 2mm; border-top: 2px solid var(--ink); break-after: avoid; }
+h3 { font-size: 11.5pt; margin: 5mm 0 1.5mm; font-weight: 800; break-after: avoid; }
+p { margin: 0 0 3mm; }
+ul, ol { margin: 0 0 3mm; padding-left: 5.5mm; } li { margin-bottom: 1.2mm; }
+small, .muted { color: var(--muted); }
+section { break-inside: auto; margin-bottom: 6mm; }
+.cover { height: 250mm; display: flex; flex-direction: column; justify-content: space-between; break-after: page; }
+.cover .logo { width: 28mm; height: 28mm; border-radius: 7mm; }
+.cover .tag { display: inline-block; background: var(--lime); border-radius: 99px; padding: 1mm 4mm; font-weight: 800; font-size: 9pt; }
+.cover h1 { font-size: 36pt; margin-top: 8mm; }
+.cover .lead { font-size: 13pt; color: #4a4843; max-width: 130mm; }
+.cover .phones { display: flex; gap: 6mm; align-items: flex-end; }
+.cover .phones img { width: 46mm; border-radius: 6mm; box-shadow: 0 3mm 8mm rgba(30, 24, 10, .25); }
+.cover .phones img:nth-child(2) { width: 52mm; margin-bottom: 8mm; }
+.meta { font-size: 9pt; color: var(--muted); }
+.shots { display: flex; gap: 5mm; margin: 3mm 0 5mm; break-inside: avoid; justify-content: center; }
+.shot { width: 41mm; text-align: center; font-size: 8pt; color: var(--muted); line-height: 1.3; }
+.shot img { width: 100%; border-radius: 5mm; border: 1px solid #ddd8cf; display: block; margin-bottom: 1.5mm; }
+.shot b { color: var(--ink); display: block; font-size: 9pt; }
+table { width: 100%; border-collapse: collapse; margin: 2mm 0 5mm; font-size: 9.5pt; break-inside: avoid; }
+th, td { text-align: left; padding: 2mm 3mm; border-bottom: 1px solid #e3dfd6; vertical-align: top; }
+th { background: var(--bg); font-weight: 800; }
+.ok { color: #3f7d0a; font-weight: 800; } .warn { color: #b45309; font-weight: 800; }
+.callout { background: var(--bg); border-radius: 4mm; padding: 3mm 5mm; margin: 2mm 0 4mm; break-inside: avoid; }
+.callout.warn-box { background: #fff3d6; }
+.callout b:first-child { display: block; margin-bottom: 1mm; }
+.step { display: flex; gap: 4mm; margin-bottom: 3mm; break-inside: avoid; }
+.step .n { flex: none; width: 8mm; height: 8mm; border-radius: 50%; background: var(--sky); font-weight: 800; display: grid; place-items: center; }
+.step .t { flex: 1; } .step .t > b:first-child { display: block; }
+code { font: 500 9pt 'Courier New', monospace; background: #efece5; padding: .3mm 1.2mm; border-radius: 1mm; }
+pre { font: 500 8.5pt/1.45 'Courier New', monospace; background: #1b1d22; color: #e8e8e8; padding: 4mm; border-radius: 3mm; white-space: pre-wrap; break-inside: avoid; margin: 2mm 0 4mm; }
+.cols { display: flex; gap: 6mm; } .cols > div { flex: 1; }
+.chk li { list-style: none; margin-left: -5mm; } .chk li::before { content: '☐ '; }
+svg text { font-family: 'Manrope', sans-serif; }
+</style>
+</head>
+<body>
+
+<!-- ============ PORTADA ============ -->
+<div class="cover">
+  <div>
+    <img class="logo" src="../../web/public/icon.svg" alt="" />
+    <p style="margin-top:8mm"><span class="tag">DEMO MVP</span></p>
+    <h1>Inmuebles en Ruta</h1>
+    <p class="lead">Guía del demo: cómo instalarlo, cómo presentarlo, qué es real y qué es simulado, y cómo está construido.</p>
+  </div>
+  <div class="phones">
+    <img src="img/home.jpg" alt="" /><img src="img/nav-day.jpg" alt="" /><img src="img/nav-night.jpg" alt="" />
+  </div>
+  <div class="meta">
+    <b>https://inmuebles.calolomino.dev</b><br />
+    Versión del demo: Fase 5 · Octubre 2026 · Código: github.com/caloloc2/demo_inmobiliaria (rama <code>claude/focused-euler-awli82</code>)
+  </div>
+</div>
+
+<!-- ============ 1. RESUMEN ============ -->
+<section>
+  <h2>1. Qué es este demo</h2>
+  <p><b>Inmuebles en Ruta</b> es una aplicación web instalable (PWA) que funciona como un navegador tipo Google Maps o Waze con una diferencia: <b>mientras el usuario se desplaza en auto o a pie, el mapa muestra las casas, edificios y fincas en venta que están cerca</b>, y la app le avisa cuando pasa a poca distancia de uno.</p>
+  <p>Está pensado para que la empresa <b>valide el producto visualmente</b>. Por eso los inmuebles, precios, calificaciones y fotos son <b>datos de ejemplo</b> generados alrededor de la ubicación real de quien lo usa. Todavía no existe base de datos.</p>
+
+  <table>
+    <tr><th style="width:34%">Función</th><th>Qué hace</th><th style="width:16%">Estado</th></tr>
+    <tr><td>Instalable en Android y iPhone</td><td>Se instala desde el navegador, sin tienda de apps; abre a pantalla completa con su propio icono.</td><td class="ok">Hecho</td></tr>
+    <tr><td>Pantalla de inicio</td><td>Saludo al usuario, buscador, filtros por tipo, inmueble destacado y lista de los mejores cerca de ti.</td><td class="ok">Hecho</td></tr>
+    <tr><td>Mapa con inmuebles</td><td>GPS en vivo, pines con el precio, contadores por tipo, buscador, más cercano resaltado.</td><td class="ok">Hecho</td></tr>
+    <tr><td>Ficha del inmueble</td><td>Fotos deslizables, precio, área, habitaciones, distancia, calificación y botón «Cómo llegar».</td><td class="ok">Hecho</td></tr>
+    <tr><td>Rutas en auto y a pie</td><td>Ruta, tiempo y distancia, con recálculo si el usuario se desvía.</td><td class="ok">Hecho</td></tr>
+    <tr><td>Modo conducción 3D</td><td>Cámara inclinada que sigue el rumbo, próximo giro, calle actual, velocímetro, brújula; vista 2D/3D.</td><td class="ok">Hecho</td></tr>
+    <tr><td>Modo día / noche</td><td>Mapa e interfaz oscuros; automático por hora o manual.</td><td class="ok">Hecho</td></tr>
+    <tr><td>Alertas de cercanía</td><td>Aviso dentro de la app y notificación del sistema al pasar cerca; radio de 200 m a 1 km.</td><td class="ok">Hecho</td></tr>
+    <tr><td>Notificaciones push (VAPID)</td><td>Suscripción del dispositivo y envío desde el servidor.</td><td class="warn">Falta probar en teléfonos</td></tr>
+    <tr><td>Simulación de recorrido</td><td>«Conduce» la ruta solo, con 3 velocidades, para demostrar sin salir a la calle.</td><td class="ok">Hecho</td></tr>
+    <tr><td>Base de datos de inmuebles reales</td><td>Alta, edición y consulta geoespacial de inmuebles.</td><td class="warn">Fase siguiente</td></tr>
+  </table>
+</section>
+
+<!-- ============ 2. INSTALACIÓN ============ -->
+<section>
+  <h2>2. Cómo instalar la app</h2>
+  <p>Abrir <b>https://inmuebles.calolomino.dev</b> en el teléfono (o escanear un código QR con esa dirección). La página detecta el sistema y muestra las instrucciones correspondientes.</p>
+  <div class="shots">
+    <div class="shot"><img src="img/landing-android.jpg" alt="" /><b>Android</b>Chrome → menú ⋮ → «Instalar app»</div>
+    <div class="shot"><img src="img/landing-ios.jpg" alt="" /><b>iPhone / iPad</b>Safari → Compartir → «Agregar a inicio»</div>
+  </div>
+  <div class="cols">
+    <div>
+      <h3>Android (Chrome)</h3>
+      <ol>
+        <li>Abrir la dirección en <b>Chrome</b>.</li>
+        <li>Tocar <b>Instalar app</b> (si aparece el botón) o el menú ⋮ → <b>Instalar app</b>.</li>
+        <li>Abrir <b>Inmuebles</b> desde la pantalla de inicio.</li>
+        <li>Aceptar los permisos de <b>ubicación</b> y <b>notificaciones</b>.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>iPhone / iPad (Safari)</h3>
+      <ol>
+        <li>Abrir la dirección en <b>Safari</b> (iOS 16.4 o superior).</li>
+        <li>Tocar <b>Compartir</b> → <b>Agregar a inicio</b>.</li>
+        <li>Abrir <b>Inmuebles</b> desde el <b>icono del inicio</b>, no desde Safari.</li>
+        <li>Aceptar ubicación y, en el panel de alertas, activar las notificaciones.</li>
+      </ol>
+    </div>
+  </div>
+  <div class="callout warn-box"><b>Importante en iPhone</b>Apple solo permite notificaciones push a las apps instaladas en el inicio. Si se abre desde Safari, el panel de alertas lo explica y no ofrece activarlas.</div>
+  <div class="callout"><b>Si el teléfono muestra una versión anterior</b>Cerrar la app por completo (sacarla de apps recientes) y abrirla dos veces: la actualización se aplica en la segunda apertura. Si persiste, desinstalarla y volver a instalarla desde la dirección.</div>
+</section>
+
+<!-- ============ 3. PANTALLAS ============ -->
+<section>
+  <h2>3. Recorrido por las pantallas</h2>
+  <h3>Inicio</h3>
+  <p>La app abre en <b>Inicio</b>: saludo según la hora del día (el nombre se cambia tocando el avatar), buscador, filtros Todos / Casas / Edificios / Fincas y el inmueble <b>destacado</b> con dos botones: <i>Ver en mapa</i> y <i>▶ Demo</i> (inicia una conducción simulada con un solo toque). Debajo, la lista de los mejores inmuebles, ordenados por calificación y cercanía.</p>
+  <div class="shots">
+    <div class="shot"><img src="img/home.jpg" alt="" /><b>Inicio</b>Saludo, filtros y destacado</div>
+    <div class="shot"><img src="img/home-list.jpg" alt="" /><b>Lista de mejores</b>Cada tarjeta tiene «Ir →»</div>
+    <div class="shot"><img src="img/map.jpg" alt="" /><b>Mapa</b>Pines con precio y «Más cercano»</div>
+  </div>
+  <h3>Mapa, ficha y alertas</h3>
+  <p>La pestaña <b>Mapa</b> muestra la posición del usuario («Tú»), los pines con precio, el número total y contadores por tipo (que también filtran). Al tocar un pin se abre la <b>ficha</b> con galería de fotos. La campana abre el panel de <b>alertas</b>: interruptor, radio de aviso y notificaciones push.</p>
+  <div class="shots">
+    <div class="shot"><img src="img/sheet.jpg" alt="" /><b>Ficha</b>Fotos, datos y «Cómo llegar»</div>
+    <div class="shot"><img src="img/alerts.jpg" alt="" /><b>Alertas</b>Radio y notificaciones</div>
+    <div class="shot"><img src="img/route.jpg" alt="" /><b>Vista previa de ruta</b>Auto o a pie, tiempo y distancia</div>
+  </div>
+  <h3>Navegación y modo conducción</h3>
+  <p>Al pulsar <b>Iniciar</b> la cámara se inclina en 3D y sigue el rumbo. Arriba se ve el próximo giro con su distancia; sobre la ruta, una burbuja azul con la calle a la que se entra; abajo, tiempo restante, distancia y hora de llegada, la calle actual y el velocímetro. La brújula alterna entre vista 3D y 2D. Los avisos de cercanía aparecen encima de la ruta.</p>
+  <div class="shots">
+    <div class="shot"><img src="img/nav-day.jpg" alt="" /><b>Conducción de día</b>Con aviso de inmueble cercano</div>
+    <div class="shot"><img src="img/nav-night.jpg" alt="" /><b>Conducción de noche</b>Ruta luminosa, interfaz oscura</div>
+  </div>
+</section>
+
+<!-- ============ 4. GUION ============ -->
+<section>
+  <h2>4. Guion para presentar el demo (8–10 minutos)</h2>
+  <p class="muted">Recomendado: tener la app instalada en un Android y un iPhone antes de la reunión, con datos móviles o Wi-Fi estable y el permiso de ubicación aceptado.</p>
+  <div class="step"><div class="n">1</div><div class="t"><b>Instalación en vivo (1 min)</b>Abrir la dirección, mostrar las instrucciones por sistema e instalar. Subrayar: sin tienda de apps, se actualiza sola.</div></div>
+  <div class="step"><div class="n">2</div><div class="t"><b>Inicio (1 min)</b>Saludo al usuario, filtros, destacado. «Los mejores cerca de ti» se ordena por calificación y distancia.</div></div>
+  <div class="step"><div class="n">3</div><div class="t"><b>Mapa (1–2 min)</b>Pasar a Mapa: GPS en vivo, pines con precio, «Más cercano», filtros por tipo y búsqueda. Tocar un pin y mostrar la ficha con las fotos.</div></div>
+  <div class="step"><div class="n">4</div><div class="t"><b>Cómo llegar (1 min)</b>Elegir <i>Auto</i> o <i>A pie</i> y comparar tiempos. Pulsar <b>Iniciar</b>.</div></div>
+  <div class="step"><div class="n">5</div><div class="t"><b>Modo conducción (2 min)</b>Pulsar <b>▶ Simular recorrido</b>. Mostrar el giro siguiente, la calle actual y el velocímetro; cambiar la velocidad; alternar 2D/3D con la brújula. Mientras «avanza», aparece el <b>aviso de inmueble cercano</b>: tocar <i>Ver</i> abre su ficha.</div></div>
+  <div class="step"><div class="n">6</div><div class="t"><b>Modo noche (30 s)</b>Tocar el botón de la luna durante la ruta.</div></div>
+  <div class="step"><div class="n">7</div><div class="t"><b>Alertas y notificaciones (1 min)</b>Abrir la campana: cambiar el radio y activar las notificaciones; con «Enviar prueba» llega una notificación al teléfono.</div></div>
+  <div class="step"><div class="n">8</div><div class="t"><b>Cierre (1 min)</b>Aclarar qué es simulado y qué sigue (secciones 5 y 8). Atajo: en Inicio, <b>▶ Demo</b> ejecuta los pasos 4 y 5 con un solo toque.</div></div>
+  <div class="callout"><b>Consejo para la reunión</b>La simulación es la forma más fiable de mostrar el producto en una sala: no depende de moverse físicamente ni de la precisión del GPS. Para una prueba real, caminar o conducir con la app abierta y la pantalla encendida.</div>
+</section>
+
+<!-- ============ 5. REAL VS SIMULADO ============ -->
+<section>
+  <h2>5. Qué es real y qué es simulado</h2>
+  <table>
+    <tr><th style="width:30%">Elemento</th><th style="width:20%">Estado</th><th>Detalle</th></tr>
+    <tr><td>Ubicación del usuario</td><td class="ok">Real</td><td>GPS del dispositivo. Si se deniega el permiso, se usa una zona de ejemplo (Quito) y la app lo avisa.</td></tr>
+    <tr><td>Mapa y calles</td><td class="ok">Real</td><td>OpenStreetMap vía OpenFreeMap (gratuito, sin clave).</td></tr>
+    <tr><td>Rutas, tiempos y giros</td><td class="ok">Real</td><td>Servidores OSRM públicos de OpenStreetMap (auto y a pie). Si no responden, la app dibuja una ruta aproximada en línea recta y lo indica.</td></tr>
+    <tr><td>Inmuebles</td><td class="warn">Simulado</td><td>Se generan alrededor del usuario con un generador determinista (las mismas coordenadas siempre dan los mismos inmuebles).</td></tr>
+    <tr><td>Precios, calificaciones, áreas</td><td class="warn">Simulado</td><td>Valores aleatorios con rangos creíbles.</td></tr>
+    <tr><td>Fotos</td><td class="warn">Stock</td><td>Imágenes de Unsplash (licencia libre, sin atribución obligatoria) como relleno hasta tener fotos reales.</td></tr>
+    <tr><td>Notificaciones push</td><td class="ok">Reales</td><td>Estándar Web Push con claves VAPID; las envía una función en AWS. Los inmuebles que anuncian son los simulados.</td></tr>
+    <tr><td>Carriles de la vía</td><td class="warn">No disponible aquí</td><td>La guía por carriles está implementada, pero OpenStreetMap no tiene esos datos en Guayaquil (donde se probó); se mostraría donde existan.</td></tr>
+  </table>
+</section>
+
+<!-- ============ 6. LIMITACIONES ============ -->
+<section>
+  <h2>6. Limitaciones que conviene explicar al cliente</h2>
+  <ul>
+    <li><b>Con la app cerrada no hay GPS.</b> Una PWA solo lee la ubicación mientras está abierta y con la pantalla encendida (la app mantiene la pantalla activa durante la navegación). Es una restricción de Android e iOS, no de este desarrollo.</li>
+    <li><b>Alertas con la app cerrada o el teléfono bloqueado</b> requieren una aplicación nativa (por ejemplo, con Capacitor o React Native) que use geocercas del sistema. Es el paso natural después de validar este demo.</li>
+    <li><b>Notificaciones en iPhone:</b> solo con la app instalada en el inicio y iOS 16.4 o superior.</li>
+    <li><b>Servicios públicos gratuitos:</b> los servidores de rutas y de mapa sirven bien para un demo, pero no tienen garantía de disponibilidad. Para producción se recomienda un proveedor con contrato (Mapbox, Google u OSRM/Valhalla propio).</li>
+    <li><b>La API es pública</b> y sin inicio de sesión: aceptable para un demo; para producción necesita autenticación y límites de uso.</li>
+  </ul>
+</section>
+
+<!-- ============ 7. ARQUITECTURA ============ -->
+<section>
+  <h2>7. Arquitectura técnica</h2>
+  <svg viewBox="0 0 700 250" width="100%" role="img" aria-label="Diagrama de arquitectura">
+    <rect x="10" y="85" width="120" height="70" rx="12" fill="#8fd3fa"/><text x="70" y="115" text-anchor="middle" font-weight="800" font-size="13">Teléfono</text><text x="70" y="134" text-anchor="middle" font-size="11">PWA instalada</text>
+    <rect x="190" y="85" width="140" height="70" rx="12" fill="#fde68a"/><text x="260" y="112" text-anchor="middle" font-weight="800" font-size="13">CloudFront</text><text x="260" y="131" text-anchor="middle" font-size="11">inmuebles.calolomino.dev</text><text x="260" y="146" text-anchor="middle" font-size="10">HTTPS · ACM</text>
+    <rect x="400" y="20" width="130" height="60" rx="12" fill="#dcf28f"/><text x="465" y="46" text-anchor="middle" font-weight="800" font-size="13">S3 privado</text><text x="465" y="64" text-anchor="middle" font-size="11">web + fotos</text>
+    <rect x="400" y="95" width="130" height="60" rx="12" fill="#dcf28f"/><text x="465" y="121" text-anchor="middle" font-weight="800" font-size="13">Lambda</text><text x="465" y="139" text-anchor="middle" font-size="11">/api (Node 22)</text>
+    <rect x="570" y="95" width="120" height="60" rx="12" fill="#dcf28f"/><text x="630" y="121" text-anchor="middle" font-weight="800" font-size="13">DynamoDB</text><text x="630" y="139" text-anchor="middle" font-size="11">suscripciones</text>
+    <rect x="400" y="170" width="290" height="60" rx="12" fill="#efece5"/><text x="545" y="196" text-anchor="middle" font-weight="800" font-size="13">Servicios de push (Google / Apple)</text><text x="545" y="214" text-anchor="middle" font-size="11">entregan la notificación al teléfono</text>
+    <rect x="10" y="190" width="330" height="45" rx="12" fill="#efece5"/><text x="175" y="210" text-anchor="middle" font-weight="800" font-size="12">OpenFreeMap (mapa) · OSRM (rutas)</text><text x="175" y="226" text-anchor="middle" font-size="10">servicios públicos externos, consultados desde el teléfono</text>
+    <g stroke="#111" stroke-width="2" fill="none"><path d="M130 120H190"/><path d="M330 105L400 55"/><path d="M330 130H400"/><path d="M530 125H570"/><path d="M465 155V170"/><path d="M70 155V190" stroke-dasharray="4 4"/></g>
+  </svg>
+  <table>
+    <tr><th style="width:26%">Capa</th><th>Tecnología</th></tr>
+    <tr><td>Aplicación</td><td>Vite + TypeScript, MapLibre GL (mapa vectorial), Service Worker propio (Workbox) con caché y manejo de push, tipografía Manrope.</td></tr>
+    <tr><td>Datos de demo</td><td><code>SimulatedPropertyProvider</code>: generador determinista por celdas de ~1 km. Se sustituye por una API real implementando la misma interfaz (<code>PropertyProvider</code>), sin tocar el mapa.</td></tr>
+    <tr><td>Hosting</td><td>S3 privado + CloudFront (acceso por OAC), certificado ACM, registros A/AAAA en la zona <code>calolomino.dev</code> de Route 53. Caché larga en archivos con hash y fotos; <code>sw.js</code> y manifiesto siempre sin caché.</td></tr>
+    <tr><td>Push</td><td>Web Push con VAPID: una Lambda (<code>web-push</code>) con URL pública detrás de CloudFront en <code>/api/*</code> (mismo dominio, sin CORS). Genera las claves VAPID la primera vez y las guarda en DynamoDB.</td></tr>
+    <tr><td>API</td><td><code>GET /api/config</code> · <code>POST /api/subscribe</code> · <code>/unsubscribe</code> · <code>/test</code> · <code>/position</code>. Valida entradas, limita el tamaño de la solicitud y solo acepta escrituras originadas en la propia app.</td></tr>
+    <tr><td>Infraestructura</td><td>AWS CDK (TypeScript), un solo stack <code>InmueblesWeb</code> en us-east-1. CI en GitHub Actions: tipos, compilación y <code>cdk synth</code>.</td></tr>
+  </table>
+  <h3>Costo estimado</h3>
+  <p>Con el tráfico de un demo, los servicios utilizados (S3, CloudFront, Lambda, DynamoDB bajo demanda y registros DNS) deberían costar <b>unos pocos dólares al mes o menos</b>. Es una estimación, no una factura: conviene revisar Cost Explorer tras las primeras semanas. Los mapas y rutas usados no tienen costo.</p>
+  <h3>Seguridad y buenas prácticas pendientes</h3>
+  <ul>
+    <li>El despliegue se hizo con un usuario IAM administrador. Para el CI se recomienda un rol de menor privilegio con OIDC de GitHub.</li>
+    <li>No hay datos personales almacenados: solo el identificador técnico de la suscripción push (se borra a los 30 días o al desactivar) y avisos recientes (caducan a los 30 minutos).</li>
+    <li>La ubicación se pide con consentimiento del navegador. Con push activado se envía al servidor únicamente para decidir qué inmueble avisar; no se guarda.</li>
+  </ul>
+</section>
+
+<!-- ============ 8. OPERACIÓN ============ -->
+<section>
+  <h2>8. Operación y mantenimiento</h2>
+  <h3>Estructura del repositorio</h3>
+  <pre>web/      Aplicación (Vite + TypeScript)
+  src/app      pantallas: inicio, mapa, navegación, alertas, push
+  src/nav      rutas, geometría y simulador
+  src/properties  modelo, generador simulado y formato
+  src/sw.ts    Service Worker (caché, push, clic en notificación)
+  public/photos fotos de stock
+infra/    AWS CDK + Lambda de la API (lambda/handler.ts)
+docs/     esta guía</pre>
+  <h3>Publicar cambios</h3>
+  <pre>cd web   &amp;&amp; npm ci &amp;&amp; npm run build
+cd ../infra &amp;&amp; npm ci &amp;&amp; npx cdk deploy</pre>
+  <p>El despliegue tarda 1–2 minutos y crea una nueva versión sin interrupciones. Los teléfonos reciben la actualización al abrir la app.</p>
+  <h3>Cambios frecuentes</h3>
+  <table>
+    <tr><th style="width:38%">Qué cambiar</th><th>Dónde</th></tr>
+    <tr><td>Nombre, colores y logo</td><td><code>web/vite.config.ts</code> (manifiesto), <code>web/src/style.css</code> (colores), <code>web/public/icon.svg</code> y <code>npm run icons</code></td></tr>
+    <tr><td>Fotos de los inmuebles</td><td><code>web/public/photos/</code> y <code>photos()</code> en <code>web/src/properties/format.ts</code></td></tr>
+    <tr><td>Tipos, precios y textos simulados</td><td><code>web/src/properties/generator.ts</code></td></tr>
+    <tr><td>Radios de aviso</td><td><code>RADII</code> en <code>web/src/app/alerts.ts</code></td></tr>
+    <tr><td>Servidor de rutas o estilo de mapa</td><td><code>web/src/nav/route.ts</code> y <code>web/src/app/main.ts</code></td></tr>
+  </table>
+</section>
+
+<!-- ============ 9. SIGUIENTES PASOS ============ -->
+<section>
+  <h2>9. Siguientes pasos y preguntas para el cliente</h2>
+  <h3>Hoja de ruta sugerida</h3>
+  <ol>
+    <li><b>Validar el demo</b> con 3–5 personas en teléfonos reales (checklist del anexo).</li>
+    <li><b>Datos reales:</b> base de datos con consultas geoespaciales (por ejemplo PostgreSQL + PostGIS o DynamoDB con geohash) y un panel para cargar inmuebles y fotos.</li>
+    <li><b>Cuentas de usuario</b>, favoritos, contacto con el asesor (llamada o WhatsApp) y agenda de visitas.</li>
+    <li><b>App nativa</b> (Capacitor / React Native) para alertas con la app cerrada mediante geocercas, reutilizando gran parte de este código.</li>
+    <li><b>Proveedor de mapas/rutas con contrato</b> si el volumen o la disponibilidad lo exigen.</li>
+  </ol>
+  <h3>Preguntas para definir el alcance</h3>
+  <ul>
+    <li>¿En qué ciudades o países empezaría el servicio y cuántos inmuebles tendría el catálogo inicial?</li>
+    <li>¿Quién cargará y actualizará los inmuebles: la empresa, los asesores o una integración con su sistema actual?</li>
+    <li>¿Es imprescindible avisar con la app cerrada? (determina si se necesita app nativa)</li>
+    <li>¿Se necesita registro de usuarios, y qué datos de contacto pueden mostrarse?</li>
+    <li>¿Marca propia: nombre, logo, colores y dominio definitivo?</li>
+  </ul>
+</section>
+
+<!-- ============ ANEXO ============ -->
+<section>
+  <h2>Anexo · Checklist de pruebas en dispositivos reales</h2>
+  <div class="callout warn-box"><b>Estado de validación</b>Las pantallas y flujos se probaron en un navegador de pruebas contra el sitio publicado, y la API se verificó con peticiones reales. <b>Aún no se ha probado en teléfonos físicos</b>: esta lista cubre justo eso.</div>
+  <div class="cols">
+    <div>
+      <h3>Android (Chrome)</h3>
+      <ul class="chk">
+        <li>Instala desde la página y abre a pantalla completa.</li>
+        <li>Pide y acepta ubicación; el punto «Tú» aparece.</li>
+        <li>Los pines aparecen y la ficha muestra las 3 fotos.</li>
+        <li>Ruta en auto y a pie con tiempos distintos.</li>
+        <li>Modo conducción 3D fluido (sin tirones).</li>
+        <li>Botón de luna cambia a modo noche.</li>
+        <li>«Activar notificaciones» y «Enviar prueba» llegan.</li>
+        <li>Al tocar la notificación se abre la ficha.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>iPhone (Safari, iOS 16.4+)</h3>
+      <ul class="chk">
+        <li>Agregar a inicio y abrir desde el icono.</li>
+        <li>Permiso de ubicación aceptado.</li>
+        <li>Mapa, ficha, rutas y conducción 3D correctos.</li>
+        <li>El panel de alertas permite activar notificaciones (solo instalada).</li>
+        <li>«Enviar prueba» llega al iPhone.</li>
+        <li>La pantalla no se apaga durante la navegación.</li>
+        <li>Teclado del buscador no rompe el diseño.</li>
+      </ul>
+    </div>
+  </div>
+  <h3>Créditos y licencias</h3>
+  <p class="muted">Datos de mapa © colaboradores de OpenStreetMap, servidos por OpenFreeMap y OpenMapTiles. Rutas: OSRM / OpenStreetMap Alemania. Fotografías de stock: Unsplash (licencia Unsplash). Mapa: MapLibre GL JS. Tipografía: Manrope (SIL Open Font License).</p>
+</section>
+
+</body>
+</html>

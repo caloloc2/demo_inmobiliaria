@@ -23,6 +23,7 @@ const NEIGHBORHOODS = ['Los Pinos', 'La Colina', 'El Mirador', 'Valle Verde', 'S
 const CONDITIONS = ['Nuevo', 'Buen estado', 'Excelente estado', 'Para remodelar'] as const;
 const ADJ = ['Moderna', 'Amplia', 'Acogedora', 'Con vista', 'Remodelada', 'Esquinera'];
 
+const fmt = (n: number, d = 0) => n.toLocaleString('es-EC', { minimumFractionDigits: d, maximumFractionDigits: d });
 const pick = <T>(rnd: () => number, arr: readonly T[]): T => arr[Math.floor(rnd() * arr.length)];
 const int = (rnd: () => number, min: number, max: number) => min + Math.floor(rnd() * (max - min + 1));
 const round = (n: number, step: number) => Math.round(n / step) * step;
@@ -41,21 +42,21 @@ function build(rnd: () => number, id: string, center: LatLng): Property {
     bathrooms = int(rnd, 1, 4);
     price = round(areaM2 * int(rnd, 900, 1500), 1000);
     title = `Casa ${pick(rnd, ADJ).toLowerCase()} en ${neighborhood}`;
-    description = `Casa de ${bedrooms} habitaciones y ${bathrooms} baños, ${areaM2} m² de construcción, parqueadero y patio. Sector tranquilo con todos los servicios.`;
+    description = `Casa de ${bedrooms} habitaciones y ${bathrooms} baños, ${fmt(areaM2)} m² de construcción, parqueadero y patio. Sector tranquilo con todos los servicios.`;
   } else if (type === 'edificio') {
     areaM2 = int(rnd, 450, 2400);
     bedrooms = null;
     bathrooms = null;
     price = round(areaM2 * int(rnd, 1100, 1900), 5000);
     title = `Edificio ${int(rnd, 3, 12)} pisos en ${neighborhood}`;
-    description = `Edificio de ${areaM2} m² ideal para renta o inversión. Excelente ubicación, alta plusvalía y acceso directo a la vía principal.`;
+    description = `Edificio de ${fmt(areaM2)} m² ideal para renta o inversión. Excelente ubicación, alta plusvalía y acceso directo a la vía principal.`;
   } else {
     areaM2 = int(rnd, 5000, 80000);
     bedrooms = int(rnd, 2, 6);
     bathrooms = int(rnd, 2, 5);
     price = round((areaM2 / 10000) * int(rnd, 60000, 150000), 1000);
-    title = `Finca de ${(areaM2 / 10000).toFixed(1)} ha cerca de ${neighborhood}`;
-    description = `Finca de ${(areaM2 / 10000).toFixed(1)} hectáreas con casa principal, agua propia y acceso lastrado. Ideal para vivienda campestre o proyecto productivo.`;
+    title = `Finca de ${fmt(areaM2 / 10000, 1)} ha cerca de ${neighborhood}`;
+    description = `Finca de ${fmt(areaM2 / 10000, 1)} hectáreas con casa principal, agua propia y acceso lastrado. Ideal para vivienda campestre o proyecto productivo.`;
   }
 
   return { id, type, title, price, areaM2, bedrooms, bathrooms, address: `${street} N${number}, ${neighborhood}`, condition: pick(rnd, CONDITIONS), description, rating: 4 + int(rnd, 0, 9) / 10, reviews: int(rnd, 6, 120), ...center };

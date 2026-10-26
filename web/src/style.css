@@ -30,3 +30,4 @@ button, .btn { display: inline-block; background: var(--sky); color: var(--ink);
 .pill.sun { background: var(--sun); }
 .logo { width: 76px; height: 76px; border-radius: 22px; box-shadow: var(--shadow); }
 small { color: var(--muted); }
+.demo-note { text-align: center; margin: 22px 0 0; }

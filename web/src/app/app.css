@@ -224,3 +224,8 @@ body[data-theme='night'] #total { text-shadow: 0 0 14px #0c1018, 0 0 4px #0c1018
 body[data-theme='night'] .user-tag { text-shadow: 0 0 6px #000, 0 0 3px #000; color: #fff; }
 body[data-theme='night'] .pin { background: #1c2230; color: #fff; }
 body[data-theme='night'] .pin.nearest { background: #fff; color: #111; }
+
+/* Panel de alertas: el título deja sitio al botón de volver */
+#alertpanel .sheet-head { padding: 4px 0 0 56px; min-height: 52px; }
+#alertpanel .sheet-head h2 { font-size: 1.3rem; }
+#alertpanel .sub { margin-bottom: 4px; }

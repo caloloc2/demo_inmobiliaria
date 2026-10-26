@@ -11,7 +11,7 @@ Producción del demo: https://inmuebles.calolomino.dev
 cd web && npm ci && npm run build
 cd ../infra && npm ci && npx cdk deploy
 ```
-Estado: Fase 1 (PWA instalable + landing + infraestructura). Siguiente: mapa, GPS e inmuebles simulados.
+Estado: Fases 1 a 5 completas (PWA, mapa y GPS, rutas y conducción 3D, alertas y push, pulido). Guía completa del demo: [`docs/Guia-Demo-Inmuebles-en-Ruta.pdf`](docs/Guia-Demo-Inmuebles-en-Ruta.pdf).
 
 ## Fase 4: alertas y push
 - Alertas de cercanía en el cliente (`web/src/app/alerts.ts`): radio configurable, aviso dentro de la app + notificación del sistema.
@@ -21,3 +21,6 @@ Estado: Fase 1 (PWA instalable + landing + infraestructura). Siguiente: mapa, GP
 
 ## Fotos
 Las fotos de `web/public/photos/` son imágenes de stock de Unsplash (licencia libre, sin atribución obligatoria), usadas solo como relleno del demo; se reemplazarán por las fotos reales de cada inmueble.
+
+## Guía del demo
+`docs/Guia-Demo-Inmuebles-en-Ruta.pdf` (código fuente en `docs/guia/guia.html`). Para regenerarla: abrir `guia.html` con Chromium/Playwright y exportar a PDF en A4.

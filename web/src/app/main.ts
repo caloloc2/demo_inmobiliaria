@@ -342,6 +342,7 @@ map.on('dragstart', () => {
 const toastEl = $('toast');
 let toastTimer: number | undefined;
 function showToast(p: Property, distM: number) {
+  if (document.body.classList.contains('view-home')) return; // en Inicio solo llega la notificación del sistema
   toastEl.innerHTML = `<span class="toast-ico" style="color:${TYPE_COLOR[p.type]}">${typeIcon(p.type, 24)}</span><div><b>${TYPE_LABEL[p.type]} en venta a ${formatDistance(distM)}</b><small>${p.title} · ${formatPrice(p.price)}</small></div><span class="toast-go">Ver</span>`;
   toastEl.classList.remove('hidden');
   toastEl.onclick = () => {
@@ -378,7 +379,7 @@ async function renderAlertPanel(note = '') {
   };
   alertPanel.innerHTML = `
     <button class="sheet-close" data-a="close" aria-label="Cerrar">‹</button>
-    <div class="sheet-head"><h2>Alertas de cercanía</h2><p class="sub">Te avisamos cuando pases cerca de un inmueble en venta</p></div>
+    <div class="sheet-head"><h2>Alertas de cercanía</h2><p class="sub">Te avisamos cuando pases cerca de un inmueble en venta.</p></div>
     <button class="switch ${s.enabled ? 'on' : ''}" data-a="toggle" role="switch" aria-checked="${s.enabled}"><span>Avisarme</span><i></i></button>
     <p class="label">Radio de aviso</p>
     <div class="modes">${RADII.map((r) => `<button class="mode ${r === s.radiusM ? 'on' : ''}" data-r="${r}">${r >= 1000 ? r / 1000 + ' km' : r + ' m'}</button>`).join('')}</div>
